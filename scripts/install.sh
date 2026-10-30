@@ -122,14 +122,34 @@ fi
 
 # ---------------------------------------------------------------- packages --
 STEP="installing system packages"
-log "Installing system packages"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq ca-certificates curl git openssl python3 >/dev/null
-if [[ $SELF_SIGNED -eq 0 ]]; then apt-get install -y -qq certbot >/dev/null; fi
+# Fresh Ubuntu servers often run unattended-upgrades right after boot:
+# wait for other apt/dpkg processes instead of failing on the lock.
+wait_for_apt() {
+  local i
+  for i in $(seq 1 120); do
+    pgrep -x apt-get >/dev/null || pgrep -x apt >/dev/null || pgrep -x dpkg >/dev/null \
+      || pgrep -f unattended-upgr >/dev/null || return 0
+    if (( i == 1 )); then log "Waiting for another apt/dpkg process (e.g. automatic updates) to finish"; fi
+    sleep 5
+  done
+  warn "apt is still busy after 10 minutes; continuing anyway."
+}
+APT_OPTS=(-y -qq -o DPkg::Lock::Timeout=300)
+packages=()
+for p in ca-certificates curl git openssl python3; do dpkg -s "$p" >/dev/null 2>&1 || packages+=("$p"); done
+if [[ $SELF_SIGNED -eq 0 ]] && ! command -v certbot >/dev/null; then packages+=(certbot); fi
 if [[ $SKIP_DOCKER -eq 0 ]] && ! docker compose version >/dev/null 2>&1; then
   # Ubuntu's own packages: no dependency on download.docker.com (unreachable from some networks).
-  apt-get install -y -qq docker.io docker-compose-v2 docker-buildx >/dev/null
+  packages+=(docker.io docker-compose-v2 docker-buildx)
+fi
+if (( ${#packages[@]} )); then
+  log "Installing system packages: ${packages[*]}"
+  wait_for_apt
+  apt-get update -qq -o DPkg::Lock::Timeout=300
+  apt-get install "${APT_OPTS[@]}" "${packages[@]}" >/dev/null
+else
+  log "System packages already installed"
 fi
 command -v systemctl >/dev/null && systemctl enable --now docker >/dev/null 2>&1 || true
 docker info >/dev/null 2>&1 || die "Docker daemon is not running."
@@ -246,7 +266,7 @@ log "Sized for ${CPUS} CPU / ${MEM_MB} MB RAM"
 if [[ -z "$ADMIN_IPS" ]]; then
   # sudo drops SSH_CLIENT, so fall back to the login session of this terminal.
   ADMIN_IPS="$(awk '{print $1}' <<<"${SSH_CLIENT:-}")"
-  if [[ -z "$ADMIN_IPS" ]]; then ADMIN_IPS="$(who -m --ips 2>/dev/null | awk '{print $NF}' | tr -d '()')"; fi
+  if [[ -z "$ADMIN_IPS" ]]; then ADMIN_IPS="$(who -m 2>/dev/null | awk '{print $NF}' | tr -d '()')"; fi
   [[ "$ADMIN_IPS" =~ ^[0-9a-fA-F.:]+$ ]] || ADMIN_IPS=""
 fi
 ALLOW_FILE="infrastructure/nginx/snippets/admin-allowlist.local.conf"
