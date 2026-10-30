@@ -89,3 +89,43 @@ describe('WebAudioPort scheduling', () => {
     expect(port.schedule('tone', 1_100)).toBeGreaterThan(1_100);
   });
 });
+
+describe('recorded stimuli', () => {
+  it('loads and attenuates bundled recordings', async () => {
+    const clock = new OffsetClock(new ManualClock(10_000), 9_000);
+    const { ctx } = fakeContext({
+      currentTime: 2,
+      outputLatency: 0,
+      pair: { contextTime: 2, performanceTime: 10_000 },
+    });
+    const samples = new Float32Array([1, -1, 0.5]);
+    const decoded = {
+      numberOfChannels: 1,
+      getChannelData: () => samples,
+    } as unknown as AudioBuffer;
+    const port = new WebAudioPort({
+      context: ctx,
+      clock,
+      loadAsset: async () => new ArrayBuffer(8),
+      decode: async () => decoded,
+    });
+    await port.prepare({
+      word: { modality: 'auditory', assetKey: 'fa/digit-1', durationMs: 400, levelDb: -6 },
+    });
+    expect(samples[0]).toBeCloseTo(10 ** (-6 / 20), 6);
+    expect(port.schedule('word', 1_100)).toBeCloseTo(1_100, 6);
+  });
+
+  it('requires a loader for asset stimuli', async () => {
+    const clock = new OffsetClock(new ManualClock(0), 0);
+    const { ctx } = fakeContext({
+      currentTime: 0,
+      outputLatency: 0,
+      pair: { contextTime: 0, performanceTime: 0 },
+    });
+    const port = new WebAudioPort({ context: ctx, clock });
+    await expect(
+      port.prepare({ w: { modality: 'auditory', assetKey: 'x', durationMs: 100, levelDb: 0 } }),
+    ).rejects.toThrow(/loadAsset/);
+  });
+});

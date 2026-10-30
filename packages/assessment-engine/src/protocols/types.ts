@@ -10,11 +10,16 @@ export interface VisualStimulusSpec {
 
 export interface AuditoryStimulusSpec {
   modality: 'auditory';
-  /** Synthesised tone; `assetKey` takes precedence when present. */
-  frequencyHz: number;
+  /** Synthesised tone frequency; required unless `assetKey` is given. */
+  frequencyHz?: number;
+  /** Length of the sound (for a recording: the trimmed clip length). */
   durationMs: number;
-  /** Peak gain in dBFS (≤ 0). */
+  /** Peak gain in dBFS (≤ 0); applied to recordings too. */
   levelDb: number;
+  /**
+   * Recorded sound bundled with the player (e.g. a spoken word). Recordings
+   * must start without leading silence: their first sample is the onset.
+   */
   assetKey?: string;
 }
 
@@ -103,6 +108,9 @@ export function assertValidProtocol(p: ProtocolDefinition): void {
         const spec = p.stimuli[id];
         if (!spec) fail(`unknown stimulus ${id}`);
         else if (spec.modality !== m) fail(`stimulus ${id} is not ${m}`);
+        else if (spec.modality === 'auditory' && !spec.assetKey && !spec.frequencyHz) {
+          fail(`stimulus ${id} needs frequencyHz or assetKey`);
+        }
       }
     }
   });

@@ -17,6 +17,7 @@ import {
   DomStimulusRenderer,
 } from '@cognitest/stimulus-renderer';
 import { IpcOutboxSink } from './ipc-sink';
+import { loadBundledAsset } from './stimulus-assets';
 
 export interface RunOptions {
   protocol: ProtocolDefinition;
@@ -45,7 +46,12 @@ export function runSession(o: RunOptions): RunHandle {
     clock,
     frames: new AnimationFrameSource(window),
     visual: new DomStimulusRenderer({ container: o.container }),
-    audio: new WebAudioPort({ context: audioContext, clock }),
+    audio: new WebAudioPort({
+      context: audioContext,
+      clock,
+      loadAsset: loadBundledAsset,
+      decode: (data) => audioContext.decodeAudioData(data),
+    }),
     input: new CompositeInput([new KeyboardInput(window), new MouseInput(window)]),
     environment: new DocumentEnvironment(document, window),
     recorder,

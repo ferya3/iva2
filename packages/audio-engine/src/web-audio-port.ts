@@ -113,10 +113,17 @@ export class WebAudioPort implements AudioPort {
     if (spec.assetKey) {
       if (!this.o.loadAsset || !this.o.decode)
         throw new Error('asset stimuli need loadAsset and decode');
-      return this.o.decode(await this.o.loadAsset(spec.assetKey));
+      const buffer = await this.o.decode(await this.o.loadAsset(spec.assetKey));
+      applyGain(buffer, spec.levelDb);
+      return buffer;
     }
+    if (!spec.frequencyHz) throw new Error('auditory stimulus needs frequencyHz or assetKey');
     const ctx = this.o.context;
-    const samples = synthesizeTone(spec, ctx.sampleRate, this.o.rampMs ?? 5);
+    const samples = synthesizeTone(
+      { ...spec, frequencyHz: spec.frequencyHz },
+      ctx.sampleRate,
+      this.o.rampMs ?? 5,
+    );
     const buffer = ctx.createBuffer(1, samples.length, ctx.sampleRate);
     buffer.copyToChannel(samples, 0);
     return buffer;
@@ -125,7 +132,7 @@ export class WebAudioPort implements AudioPort {
 
 /** Pure sine synthesis with raised-cosine ramps; exported for testing. */
 export function synthesizeTone(
-  spec: Pick<AuditoryStimulusSpec, 'frequencyHz' | 'durationMs' | 'levelDb'>,
+  spec: { frequencyHz: number; durationMs: number; levelDb: number },
   sampleRate: number,
   rampMs = 5,
 ): Float32Array<ArrayBuffer> {
@@ -142,4 +149,18 @@ export function synthesizeTone(
     out[i] = gain * env * Math.sin(w * i);
   }
   return out;
+}
+
+/** Scales a decoded recording by `levelDb` (≤ 0 dBFS) in place. */
+export function applyGain(
+  buffer: Pick<AudioBuffer, 'numberOfChannels' | 'getChannelData'>,
+  levelDb: number,
+): void {
+  if (levelDb > 0) throw new RangeError('levelDb must be ≤ 0 dBFS');
+  if (levelDb === 0) return;
+  const gain = 10 ** (levelDb / 20);
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const data = buffer.getChannelData(c);
+    for (let i = 0; i < data.length; i++) data[i] = data[i]! * gain;
+  }
 }

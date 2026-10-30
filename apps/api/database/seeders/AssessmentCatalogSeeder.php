@@ -20,10 +20,10 @@ class AssessmentCatalogSeeder extends Seeder
         $protocol = json_decode(file_get_contents(__DIR__.'/data/demo-cpt.protocol.json'), true, flags: JSON_THROW_ON_ERROR);
 
         $type = AssessmentType::query()->updateOrCreate(['key' => 'demo-cpt'], [
-            'name' => 'آزمون عملکرد پیوسته دیداری-شنیداری (نمایشی)',
-            'name_en' => 'Audio-visual CPT (demo)',
+            'name' => 'آزمون عملکرد پیوسته دیداری-شنیداری اعداد ۱ و ۲ (نمایشی)',
+            'name_en' => 'Audio-visual digit CPT (demo)',
             'category' => 'attention',
-            'description' => 'آزمون Go/No-Go عمومی برای اعتبارسنجی فنی و نمایش. غیربالینی و فاقد هنجار.',
+            'description' => 'آزمون Go/No-Go عمومی با عدد ۱ (پاسخ) و ۲ (عدم پاسخ)، نوشتاری و گفتاری. برای اعتبارسنجی فنی و نمایش؛ غیربالینی و فاقد هنجار.',
         ]);
 
         if ($type->versions()->where('version', $protocol['version'])->exists()) {
@@ -36,7 +36,8 @@ class AssessmentCatalogSeeder extends Seeder
             'status' => 'draft',
             'is_clinical' => false,
             'estimated_duration_seconds' => 420,
-            'min_engine_version' => '1.0.0',
+            // 1.1.0: recorded (spoken) stimuli bundled with the player.
+            'min_engine_version' => '1.1.0',
         ]);
         AssessmentProtocol::create(['assessment_version_id' => $version->id, 'config' => $protocol]);
         ValidationRule::create(['assessment_version_id' => $version->id, 'rules' => [
@@ -65,5 +66,8 @@ class AssessmentCatalogSeeder extends Seeder
             'is_default' => true,
         ]);
         $version->update(['status' => 'published', 'published_at' => now()]);
+
+        // New sessions use the new version; existing sessions keep theirs.
+        $type->versions()->where('id', '!=', $version->id)->where('status', 'published')->update(['status' => 'retired']);
     }
 }

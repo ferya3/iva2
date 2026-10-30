@@ -24,7 +24,8 @@ import { BlockScheduler, type TrialRuntime } from '../scheduler/scheduler';
 import { FrameMonitor } from '../visual/frame-monitor';
 import { LatencyMonitor } from '../timing/latency-monitor';
 
-export const ENGINE_VERSION = '1.0.0';
+/** 1.1.0: recorded (asset) auditory stimuli. */
+export const ENGINE_VERSION = '1.1.0';
 
 export interface EngineProgress {
   blockIndex: number;

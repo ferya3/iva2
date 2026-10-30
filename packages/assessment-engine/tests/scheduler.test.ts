@@ -18,8 +18,9 @@ describe('timeline', () => {
         );
         for (let i = 1; i < trials.length; i++) {
           const soa = trials[i]!.onsetMs - trials[i - 1]!.onsetMs;
-          expect(soa).toBeGreaterThanOrEqual(1400);
-          expect(soa).toBeLessThanOrEqual(1800);
+          const [min, max] = DEMO_CPT_PROTOCOL.timing.soaMs as [number, number];
+          expect(soa).toBeGreaterThanOrEqual(min);
+          expect(soa).toBeLessThanOrEqual(max);
         }
         if (def.maxConsecutiveTargets) {
           let run = 0;
@@ -44,6 +45,25 @@ describe('timeline', () => {
 });
 
 describe('protocol validation', () => {
+  it('rejects an auditory stimulus without tone or recording', () => {
+    const bad = {
+      ...SMALL_PROTOCOL,
+      stimuli: {
+        ...SMALL_PROTOCOL.stimuli,
+        hi: { modality: 'auditory' as const, durationMs: 100, levelDb: -6 },
+      },
+      blocks: [
+        {
+          ...SMALL_PROTOCOL.blocks[0]!,
+          modalities: ['auditory' as const],
+          targets: { auditory: ['hi'] },
+          nonTargets: { auditory: ['lo'] },
+        },
+      ],
+    };
+    expect(() => assertValidProtocol(bad)).toThrow(/frequencyHz or assetKey/);
+  });
+
   it('accepts the demo protocol', () => {
     expect(() => assertValidProtocol(DEMO_CPT_PROTOCOL)).not.toThrow();
   });

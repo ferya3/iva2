@@ -17,11 +17,12 @@ describe('DomStimulusRenderer', () => {
     expect(nodes).toHaveLength(2);
     expect([...nodes].every((n) => n.style.visibility === 'hidden')).toBe(true);
 
-    r.show('v-target');
-    expect(r.current).toBe('v-target');
-    r.show('v-nontarget');
+    r.show('v-1');
+    expect(r.current).toBe('v-1');
+    expect(container.querySelector<HTMLElement>('[data-stimulus="v-1"]')!.textContent).toBe('۱');
+    r.show('v-2');
     const visible = [...nodes].filter((n) => n.style.visibility === 'visible');
-    expect(visible.map((n) => n.dataset.stimulus)).toEqual(['v-nontarget']);
+    expect(visible.map((n) => n.dataset.stimulus)).toEqual(['v-2']);
 
     r.clear();
     expect(r.current).toBeNull();
