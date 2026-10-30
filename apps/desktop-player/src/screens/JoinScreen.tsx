@@ -22,7 +22,14 @@ export function JoinScreen({
 }) {
   const [code, setCode] = useState(normalize(initialCode ?? ''));
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ text: string; detail: string } | null>(null);
+  const [server, setServer] = useState<string>('');
+
+  useEffect(() => {
+    void bridge()
+      .appInfo()
+      .then((info) => setServer(info.apiUrl));
+  }, []);
 
   const submit = async (value = code) => {
     if (value.length !== 9) return;
@@ -31,7 +38,11 @@ export function JoinScreen({
     const res = await bridge().join(format(value));
     setBusy(false);
     if (res.ok) onJoined(res.data);
-    else setError(errorMessage(res.code, res.message));
+    else
+      setError({
+        text: errorMessage(res.code, res.message),
+        detail: `${res.code}: ${res.message}`,
+      });
   };
 
   useEffect(() => {
@@ -62,9 +73,14 @@ export function JoinScreen({
       />
       {error ? (
         <Alert tone="danger" className="mt-4">
-          {error}
+          {error.text}
+          {/* Technical detail for support (e.g. certificate or DNS errors). */}
+          <span className="ltr mt-1 block text-xs opacity-75">{error.detail}</span>
         </Alert>
       ) : null}
+      <p className="mt-6 text-xs text-slate-400">
+        سرور: <span className="ltr">{server}</span>
+      </p>
     </Shell>
   );
 }
