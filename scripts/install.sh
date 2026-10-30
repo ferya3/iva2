@@ -79,7 +79,8 @@ done
 log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
-trap 'die "Installation failed at line $LINENO. Fix the error above and run the same command again."' ERR
+STEP="setup"
+trap 'die "Installation failed during: $STEP. Fix the error above and run the same command again."' ERR
 
 [[ $EUID -eq 0 ]] || die "Run as root (sudo)."
 if [[ -r /etc/os-release ]]; then
@@ -116,6 +117,7 @@ else
 fi
 
 # ---------------------------------------------------------------- packages --
+STEP="installing system packages"
 log "Installing system packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
@@ -207,6 +209,7 @@ ALLOW_FILE="infrastructure/nginx/snippets/admin-allowlist.local.conf"
 [[ -n "$ADMIN_IPS" ]] || warn "$ADMIN_URL is closed to everyone; rerun with --admin-ip to open it."
 
 # ------------------------------------------------------------- certificates --
+STEP="certificates"
 CERT_DIR="$INSTALL_DIR/infrastructure/nginx/certs"
 mkdir -p "$CERT_DIR"
 self_signed() {
@@ -253,11 +256,36 @@ fi
 
 # ------------------------------------------------------------ build & start --
 if [[ $NO_BUILD -eq 0 ]]; then
-  log "Building images (first run takes several minutes)"
-  dc build migrate          # cognitest/api — the worker image is built on top of it
-  dc build horizon clinic-web admin-web
+  BUILD_LOGS=/var/log/cognitest
+  mkdir -p "$BUILD_LOGS"
+  # One image at a time (readable output), retried: network failures are
+  # usually transient and BuildKit's cache keeps every finished step.
+  build_image() {
+    local svc="$1" label="$2" log="$BUILD_LOGS/build-$1.log" attempt
+    for attempt in 1 2 3; do
+      log "Building $label (attempt $attempt/3) — full log: $log"
+      if dc --progress=plain build "$svc" 2>&1 | tee "$log" \
+          | { grep --line-buffered -E '^#[0-9]+ \[[^]]+ [0-9]+/[0-9]+\]' | cut -c1-110 || true; }; then
+        return 0
+      fi
+      warn "Building $label failed. Error lines:"
+      grep -E 'ERROR|E: |Err:|ERR_|error ' "$log" | grep -v '^#[0-9]* \[' | tail -12 >&2 || true
+      sleep 10
+    done
+    case "$svc" in
+      migrate|horizon) hint="Debian downloads: rerun with --apt-mirror URL (and --registry-mirror URL)" ;;
+      *) hint="npm downloads: rerun with --npm-registry URL" ;;
+    esac
+    die "Could not build $label after 3 attempts. $hint. Full log: $log"
+  }
+  STEP="building images"
+  build_image migrate "API image"            # cognitest/api — the worker image is built on top of it
+  build_image horizon "worker image (scoring + PDF)"
+  build_image clinic-web "clinic panel"
+  build_image admin-web "admin panel"
 fi
 
+STEP="starting services"
 log "Starting services and applying migrations"
 dc up -d --remove-orphans --no-build || { dc logs migrate | tail -40; die "Services failed to start."; }
 state="starting 0"
@@ -274,6 +302,7 @@ dc up -d --no-build --force-recreate api horizon scheduler clinic-web admin-web 
 dc up -d --no-build --force-recreate nginx >/dev/null
 
 # ------------------------------------------------------------ admin account --
+STEP="creating the admin account"
 CRED_FILE="/root/cognitest-admin.txt"
 if [[ ! -f "$CRED_FILE" ]]; then
   log "Creating platform administrator $ADMIN_EMAIL"

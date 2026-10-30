@@ -69,6 +69,14 @@ sudo git clone -b claude/kind-maxwell-ibgtgr https://github.com/ferya3/iva2.git 
 - PostgreSQL و Redis فقط در شبکه `internal` هستند (پورت عمومی ندارند).
 - Horizon dashboard (`/horizon`) فقط از شبکه داخلی و برای مدیر سامانه.
 
+## عیب‌یابی نصب
+
+- هر image جداگانه ساخته می‌شود و خطای شبکه تا ۳ بار خودکار تکرار می‌شود؛ لاگ کامل: `/var/log/cognitest/build-*.log`.
+- خطای دانلود Debian (`Err:` / `apt-get ... exit code: 100`): با `--apt-mirror URL` دوباره اجرا کنید.
+- خطای npm (`pnpm install`، `ERR_PNPM_…`، `ETIMEDOUT`): با `--npm-registry URL` دوباره اجرا کنید.
+- خطای دریافت image پایه (`docker.io … 403/timeout`): با `--registry-mirror URL`.
+- اجرای دوباره همیشه امن است و مراحل ساخته‌شده از cache استفاده می‌شوند.
+
 ## پشتیبان‌گیری
 
 ```bash
