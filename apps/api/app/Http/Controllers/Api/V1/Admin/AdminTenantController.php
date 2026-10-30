@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
@@ -27,7 +28,12 @@ class AdminTenantController extends Controller
         );
     }
 
-    public function store(Request $request, TenantProvisioner $provisioner): TenantResource
+    /**
+     * Provisions a clinic. When the owner account is new, a temporary
+     * password is returned once (owner_temporary_password) so the platform
+     * admin can hand it over; it is never stored in plain text.
+     */
+    public function store(Request $request, TenantProvisioner $provisioner): JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -37,12 +43,18 @@ class AdminTenantController extends Controller
             'owner_name' => ['required', 'string', 'max:120'],
             'plan' => ['nullable', 'exists:plans,key'],
         ]);
-        $owner = User::query()->firstOrCreate(
-            ['email' => Str::lower($data['owner_email'])],
-            ['name' => $data['owner_name'], 'password' => Str::password(32)],
-        );
+        $temporaryPassword = null;
+        $owner = User::query()->where('email', Str::lower($data['owner_email']))->first();
+        if (! $owner) {
+            $temporaryPassword = Str::password(12, symbols: false);
+            $owner = User::create(['email' => Str::lower($data['owner_email']), 'name' => $data['owner_name'], 'password' => $temporaryPassword]);
+        }
+        $tenant = $provisioner->provision($data, $owner, $data['plan'] ?? 'starter');
 
-        return new TenantResource($provisioner->provision($data, $owner, $data['plan'] ?? 'starter'));
+        return (new TenantResource($tenant))
+            ->additional(['owner_temporary_password' => $temporaryPassword])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(Request $request, Tenant $tenant, AuditLogger $audit): TenantResource

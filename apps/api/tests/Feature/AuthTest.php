@@ -59,6 +59,15 @@ class AuthTest extends TestCase
         $this->get('/api/v1/auth/me')->assertStatus(401)->assertJsonPath('message', 'Unauthenticated.');
     }
 
+    public function test_new_members_get_a_one_time_password(): void
+    {
+        $this->actingAsClinic();
+        $password = $this->postJson('/api/v1/tenant/members', ['email' => 'new@clinic.ir', 'name' => 'Dr New', 'role' => 'clinician'])
+            ->assertCreated()->json('temporary_password');
+        $this->assertNotEmpty($password);
+        $this->postJson('/api/v1/auth/login', ['email' => 'new@clinic.ir', 'password' => $password])->assertOk();
+    }
+
     public function test_inactive_users_cannot_log_in(): void
     {
         User::factory()->create(['email' => 'off@example.ir', 'is_active' => false]);

@@ -7,6 +7,7 @@ use App\Models\AssessmentVersion;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\DemoSeeder;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,23 @@ class AdminTest extends TestCase
         $this->artisan('cognitest:create-admin', ['email' => 'Root@Example.ir', '--password' => 'S3cret-pass'])->assertSuccessful();
         $this->postJson('/api/v1/auth/login', ['email' => 'root@example.ir', 'password' => 'S3cret-pass'])
             ->assertOk()->assertJsonPath('user.platform_role', 'super_admin');
+    }
+
+    public function test_any_password_can_be_reset_from_the_console(): void
+    {
+        $user = User::factory()->create(['email' => 'dr@clinic.ir']);
+        $user->createToken('old');
+        $this->artisan('cognitest:reset-password', ['email' => 'DR@clinic.ir', '--password' => 'N3w-password'])->assertSuccessful();
+        $this->postJson('/api/v1/auth/login', ['email' => 'dr@clinic.ir', 'password' => 'N3w-password'])->assertOk();
+        $this->assertSame(1, $user->tokens()->count(), 'old sessions are revoked');
+        $this->artisan('cognitest:reset-password', ['email' => 'nobody@x.ir'])->assertFailed();
+    }
+
+    public function test_demo_data_never_creates_a_known_admin_password_on_servers(): void
+    {
+        $this->system(fn () => $this->seed(DemoSeeder::class));
+        $this->assertDatabaseMissing('users', ['email' => 'admin@cognitest.ir']);
+        $this->assertDatabaseHas('users', ['email' => 'owner@demo.cognitest.ir']);
     }
 
     public function test_redeploy_keeps_plan_prices(): void
@@ -57,9 +75,19 @@ class AdminTest extends TestCase
     public function test_admins_provision_and_suspend_clinics(): void
     {
         Sanctum::actingAs(User::factory()->platformAdmin()->create());
-        $id = $this->postJson('/api/v1/admin/tenants', [
+        $res = $this->postJson('/api/v1/admin/tenants', [
             'name' => 'Clinic Tabriz', 'owner_email' => 'owner@tabriz.ir', 'owner_name' => 'Owner', 'plan' => 'clinic',
-        ])->assertCreated()->json('data.id');
+        ])->assertCreated();
+        $id = $res->json('data.id');
+
+        // The new owner can sign in with the one-time password shown to the admin.
+        $password = $res->json('owner_temporary_password');
+        $this->assertSame(12, strlen($password));
+        $this->postJson('/api/v1/auth/login', ['email' => 'owner@tabriz.ir', 'password' => $password])->assertOk();
+
+        // An existing account keeps its password; nothing is returned.
+        $this->postJson('/api/v1/admin/tenants', ['name' => 'Second', 'owner_email' => 'owner@tabriz.ir', 'owner_name' => 'Owner'])
+            ->assertCreated()->assertJsonPath('owner_temporary_password', null);
 
         $this->patchJson("/api/v1/admin/tenants/{$id}", ['status' => 'suspended'])->assertOk()->assertJsonPath('data.status', 'suspended');
     }

@@ -40,6 +40,24 @@ Artisan::command('cognitest:create-admin {email} {--name=مدیر سامانه} 
     }
 })->purpose('Create (or reset) a platform administrator account');
 
+Artisan::command('cognitest:reset-password {email} {--password=}', function (TenantContext $context, string $email) {
+    $password = $this->option('password') ?: Str::password(12, symbols: false);
+    $user = $context->runAsSystem(fn () => User::query()->where('email', Str::lower($email))->first());
+    if (! $user) {
+        $this->error("No user with e-mail {$email}.");
+
+        return 1;
+    }
+    $user->forceFill(['password' => $password, 'is_active' => true])->save();
+    $user->tokens()->delete();
+    $this->info("Password reset for {$user->email}");
+    if (! $this->option('password')) {
+        $this->line("Password: {$password}");
+    }
+
+    return 0;
+})->purpose('Set a new password for any user (clinic owners, clinicians, admins)');
+
 Schedule::command('sessions:expire-invites')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('horizon:snapshot')->everyFiveMinutes();
 Schedule::command('sanctum:prune-expired --hours=24')->daily();

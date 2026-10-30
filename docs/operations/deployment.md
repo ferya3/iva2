@@ -69,6 +69,17 @@ sudo git clone -b claude/kind-maxwell-ibgtgr https://github.com/ferya3/iva2.git 
 - PostgreSQL و Redis فقط در شبکه `internal` هستند (پورت عمومی ندارند).
 - Horizon dashboard (`/horizon`) فقط از شبکه داخلی و برای مدیر سامانه.
 
+## حساب‌ها و رمزها
+
+- مدیر سامانه: هنگام نصب ساخته می‌شود (`/root/cognitest-admin.txt`).
+- کلینیک جدید: از پنل مدیریت ← «کلینیک‌ها»؛ رمز موقت مالک فقط یک‌بار همان‌جا نمایش داده می‌شود.
+- عضو جدید کلینیک: از پنل کلینیک ← «متخصصان»؛ رمز موقت فقط یک‌بار نمایش داده می‌شود.
+- تعیین رمز جدید برای هر کاربر:
+
+```bash
+cd /opt/cognitest && docker compose --env-file .env.production exec api php artisan cognitest:reset-password user@example.ir
+```
+
 ## عیب‌یابی نصب
 
 - هر image جداگانه ساخته می‌شود و خطای شبکه تا ۳ بار خودکار تکرار می‌شود؛ لاگ کامل: `/var/log/cognitest/build-*.log`.

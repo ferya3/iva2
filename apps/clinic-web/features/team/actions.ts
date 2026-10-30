@@ -4,18 +4,22 @@ import { revalidatePath } from 'next/cache';
 import { api, toFormError, type FormState } from '@/lib/api';
 
 export async function addMember(_: FormState, form: FormData): Promise<FormState> {
+  let password: string | null = null;
   try {
-    await api('/tenant/members', {
+    const res = await api<{ temporary_password: string | null }>('/tenant/members', {
       method: 'POST',
       body: { email: form.get('email'), name: form.get('name') || null, role: form.get('role') },
     });
+    password = res.temporary_password;
   } catch (e) {
     return toFormError(e);
   }
   revalidatePath('/team');
   return {
     ok: true,
-    message: 'عضو جدید اضافه شد. کاربران جدید باید از «فراموشی رمز» رمز خود را تعیین کنند.',
+    message: password
+      ? `عضو جدید اضافه شد. رمز موقت: ${password} — آن را به فرد بدهید (فقط همین یک‌بار نمایش داده می‌شود).`
+      : 'عضو اضافه شد؛ با حساب و رمز فعلی خود وارد می‌شود.',
   };
 }
 

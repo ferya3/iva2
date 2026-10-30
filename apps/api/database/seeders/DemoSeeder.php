@@ -24,7 +24,7 @@ use Throwable;
 
 /**
  * Local/demo data. Credentials (password "password"):
- *   admin@cognitest.ir      platform super-admin (admin-web)
+ *   admin@cognitest.ir      platform super-admin (admin-web) — local environment only
  *   owner@demo.cognitest.ir clinic owner (clinic-web)
  *   clinician@demo.cognitest.ir
  */
@@ -33,9 +33,13 @@ class DemoSeeder extends Seeder
     public function run(TenantContext $context, TenantProvisioner $provisioner): void
     {
         $context->runAsSystem(function () use ($context, $provisioner) {
-            User::query()->firstOrCreate(['email' => 'admin@cognitest.ir'], [
-                'name' => 'مدیر سامانه', 'password' => 'password', 'platform_role' => PlatformRole::SuperAdmin,
-            ]);
+            // A platform admin with a known password only on developer machines;
+            // servers get theirs from `cognitest:create-admin` (scripts/install.sh).
+            if (app()->environment('local')) {
+                User::query()->firstOrCreate(['email' => 'admin@cognitest.ir'], [
+                    'name' => 'مدیر سامانه', 'password' => 'password', 'platform_role' => PlatformRole::SuperAdmin,
+                ]);
+            }
             if (Tenant::query()->where('slug', 'demo-clinic')->exists()) {
                 return;
             }

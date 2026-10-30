@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\MemberResource;
 use App\Models\TenantUser;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -30,10 +31,10 @@ class TenantMemberController extends Controller
     }
 
     /**
-     * Adds an existing user by e-mail, or creates the account. New accounts
-     * get a random password and must use password reset to sign in.
+     * Adds an existing user by e-mail, or creates the account. For a new
+     * account a temporary password is returned once (temporary_password).
      */
-    public function store(Request $request, QuotaGuard $quota, AuditLogger $audit): MemberResource
+    public function store(Request $request, QuotaGuard $quota, AuditLogger $audit): JsonResponse
     {
         $data = $request->validate([
             'email' => ['required', 'email', 'max:255'],
@@ -43,12 +44,14 @@ class TenantMemberController extends Controller
         $tenant = $this->context->tenant();
         $quota->ensureCanAddMember($tenant);
 
+        $temporaryPassword = null;
         $user = User::query()->where('email', Str::lower($data['email']))->first();
         if (! $user) {
             if (empty($data['name'])) {
                 throw ValidationException::withMessages(['name' => 'Name is required for a new account.']);
             }
-            $user = User::create(['email' => Str::lower($data['email']), 'name' => $data['name'], 'password' => Str::password(32)]);
+            $temporaryPassword = Str::password(12, symbols: false);
+            $user = User::create(['email' => Str::lower($data['email']), 'name' => $data['name'], 'password' => $temporaryPassword]);
         }
         if (TenantUser::query()->where('tenant_id', $tenant->id)->where('user_id', $user->id)->exists()) {
             throw new ApiException('User is already a member of this clinic.', 'already_member', 409);
@@ -62,7 +65,10 @@ class TenantMemberController extends Controller
         ]);
         $audit->log('member.added', $member, ['role' => $data['role']]);
 
-        return new MemberResource($member->load('user'));
+        return (new MemberResource($member->load('user')))
+            ->additional(['temporary_password' => $temporaryPassword])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(Request $request, int $member, AuditLogger $audit): MemberResource

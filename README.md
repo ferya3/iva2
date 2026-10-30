@@ -63,7 +63,7 @@ pnpm --filter @cognitest/admin-web dev      # http://localhost:3001
 pnpm --filter @cognitest/desktop-player dev # Electron
 ```
 
-حساب‌های نمایشی (رمز `password`): `owner@demo.cognitest.ir` و `clinician@demo.cognitest.ir` (پنل کلینیک)، `admin@cognitest.ir` (مدیریت کل).
+حساب‌های نمایشی (رمز `password`): `owner@demo.cognitest.ir` و `clinician@demo.cognitest.ir` (پنل کلینیک)؛ `admin@cognitest.ir` (مدیریت کل) فقط در محیط توسعه محلی ساخته می‌شود.
 
 ## تست‌ها
 
