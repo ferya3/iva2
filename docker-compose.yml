@@ -27,6 +27,7 @@ x-api-env: &api-env
   SESSION_DRIVER: array
   LOG_CHANNEL: stderr
   REPORTS_DISK: reports
+  FPM_MAX_CHILDREN: ${FPM_MAX_CHILDREN:-24}
 
 x-logging: &logging
   driver: json-file
@@ -40,7 +41,20 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?required}
       COGNITEST_OWNER_PASSWORD: ${COGNITEST_OWNER_PASSWORD}
       COGNITEST_APP_PASSWORD: ${COGNITEST_APP_PASSWORD}
-    command: ['postgres', '-c', 'config_file=/etc/postgresql/postgresql.conf']
+    # Memory settings are sized to the host by scripts/install.sh (defaults: 16 GB host).
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-3GB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-8GB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-16MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-512MB}
+    shm_size: 256mb
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
@@ -51,7 +65,7 @@ services:
       timeout: 5s
       retries: 10
     networks: [internal]
-    deploy: { resources: { limits: { memory: 6g } } }
+    deploy: { resources: { limits: { memory: '${PG_MEMORY_LIMIT:-6g}' } } }
     logging: *logging
 
   redis:
@@ -63,7 +77,7 @@ services:
         '--requirepass',
         '${REDIS_PASSWORD}',
         '--maxmemory',
-        '1536mb',
+        '${REDIS_MAXMEMORY:-1536mb}',
         '--maxmemory-policy',
         'noeviction',
         '--appendonly',
@@ -76,7 +90,7 @@ services:
       retries: 10
     environment: { REDIS_PASSWORD: '${REDIS_PASSWORD}' }
     networks: [internal]
-    deploy: { resources: { limits: { memory: 2g } } }
+    deploy: { resources: { limits: { memory: '${REDIS_MEMORY_LIMIT:-2g}' } } }
     logging: *logging
 
   # One-shot: migrations as the owner role, then exits.
@@ -114,7 +128,7 @@ services:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
     networks: [internal]
-    deploy: { resources: { limits: { cpus: '3', memory: 2g } } }
+    deploy: { resources: { limits: { cpus: '${API_CPUS:-2}', memory: '${API_MEMORY_LIMIT:-2g}' } } }
     logging: *logging
 
   horizon:
@@ -128,7 +142,8 @@ services:
     volumes: [reports:/var/www/api/storage/app/private]
     depends_on: [api]
     networks: [internal]
-    deploy: { resources: { limits: { cpus: '2', memory: 2g } } }
+    deploy:
+      { resources: { limits: { cpus: '${WORKER_CPUS:-1}', memory: '${WORKER_MEMORY_LIMIT:-2g}' } } }
     logging: *logging
 
   scheduler:

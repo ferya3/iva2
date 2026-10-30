@@ -49,7 +49,8 @@ WORKDIR /var/www/api
 COPY --from=vendor --chown=www-data:www-data /app ./
 COPY --from=scoring /repo/packages/scoring-engine/dist/cli.mjs /opt/cognitest/scoring-cli.mjs
 ENV SCORING_CLI_PATH=/opt/cognitest/scoring-cli.mjs \
-    LOG_CHANNEL=stderr
+    LOG_CHANNEL=stderr \
+    FPM_MAX_CHILDREN=24
 
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views \
         storage/app/private/reports storage/logs bootstrap/cache \

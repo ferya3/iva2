@@ -198,6 +198,30 @@ if [[ -n "$NPM_REGISTRY" ]]; then set_env NPM_REGISTRY "$NPM_REGISTRY"; fi
 if [[ -n "$APT_MIRROR" ]]; then set_env DEBIAN_MIRROR "$APT_MIRROR"; fi
 chmod 600 "$ENV_FILE"
 
+# --------------------------------------------------------------- resources --
+# Size container limits and PostgreSQL/Redis/PHP-FPM memory to this host
+# (Docker refuses CPU limits above the number of host CPUs).
+STEP="sizing resources"
+clamp() { local v=$1; (( v < $2 )) && v=$2; (( v > $3 )) && v=$3; echo "$v"; }
+CPUS="$(nproc)"
+MEM_MB="$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)"
+(( MEM_MB >= 3500 )) || warn "Only ${MEM_MB} MB RAM detected; 4 GB or more is recommended."
+set_env API_CPUS "$CPUS"
+set_env WORKER_CPUS "$(( CPUS >= 4 ? 2 : 1 ))"
+set_env PG_SHARED_BUFFERS "$(clamp $(( MEM_MB / 4 )) 128 4096)MB"
+set_env PG_EFFECTIVE_CACHE_SIZE "$(clamp $(( MEM_MB / 2 )) 256 12288)MB"
+set_env PG_WORK_MEM "$(( MEM_MB >= 8000 ? 16 : (MEM_MB >= 4000 ? 8 : 4) ))MB"
+set_env PG_MAINTENANCE_WORK_MEM "$(clamp $(( MEM_MB / 16 )) 64 512)MB"
+set_env PG_MEMORY_LIMIT "$(clamp $(( MEM_MB * 6 / 10 )) 512 8192)m"
+REDIS_MB="$(clamp $(( MEM_MB / 16 )) 128 1536)"
+set_env REDIS_MAXMEMORY "${REDIS_MB}mb"
+set_env REDIS_MEMORY_LIMIT "$(( REDIS_MB + 256 ))m"
+FPM_CHILDREN="$(clamp $(( MEM_MB / 200 )) 5 24)"
+set_env FPM_MAX_CHILDREN "$FPM_CHILDREN"
+set_env API_MEMORY_LIMIT "$(clamp $(( FPM_CHILDREN * 80 + 256 )) 768 2048)m"
+set_env WORKER_MEMORY_LIMIT "$(clamp $(( MEM_MB / 4 )) 1024 2048)m"
+log "Sized for ${CPUS} CPU / ${MEM_MB} MB RAM"
+
 # ------------------------------------------------------------- admin access --
 if [[ -z "$ADMIN_IPS" ]]; then ADMIN_IPS="$(awk '{print $1}' <<<"${SSH_CLIENT:-}")"; fi
 ALLOW_FILE="infrastructure/nginx/snippets/admin-allowlist.local.conf"
