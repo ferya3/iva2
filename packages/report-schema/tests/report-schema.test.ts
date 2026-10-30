@@ -24,7 +24,15 @@ describe('report document', () => {
       },
       quality: { validity_status: 'valid', flags: [] },
       scoring: { algorithm_version: 'generic-cpt/1.0.0', scored_at: '2026-10-30T08:10:00Z' },
-      sections: [{ key: 'overview', title: 'خلاصه', metrics: [{ key: 'hits', label: 'پاسخ صحیح', value: 80, unit: 'count', scope: 'overall' }] }],
+      sections: [
+        {
+          key: 'overview',
+          title: 'خلاصه',
+          metrics: [
+            { key: 'hits', label: 'پاسخ صحیح', value: 80, unit: 'count', scope: 'overall' },
+          ],
+        },
+      ],
       disclaimers: ['این گزارش جایگزین قضاوت بالینی نیست.'],
     };
     expect(reportDocumentSchema.safeParse(doc).success).toBe(true);

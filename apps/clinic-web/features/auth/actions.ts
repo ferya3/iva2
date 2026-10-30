@@ -18,7 +18,11 @@ export async function login(_: FormState, form: FormData): Promise<FormState> {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ email: form.get('email'), password: form.get('password'), device_name: 'clinic-web' }),
+    body: JSON.stringify({
+      email: form.get('email'),
+      password: form.get('password'),
+      device_name: 'clinic-web',
+    }),
     cache: 'no-store',
   });
   const body = await res.json().catch(() => ({}));
@@ -32,14 +36,18 @@ export async function login(_: FormState, form: FormData): Promise<FormState> {
     };
   }
   const jar = await cookies();
-  const maxAge = Math.max(60, Math.floor((new Date(body.expires_at).getTime() - Date.now()) / 1000));
+  const maxAge = Math.max(
+    60,
+    Math.floor((new Date(body.expires_at).getTime() - Date.now()) / 1000),
+  );
   jar.set(TOKEN_COOKIE, body.token, cookieOptions(maxAge));
 
   const me = await api<MeDto>('/auth/me', { tenantless: true });
   if (me.memberships.length === 1) {
     jar.set(TENANT_COOKIE, me.memberships[0]!.tenant_id, cookieOptions(60 * 60 * 24 * 30));
     const next = String(form.get('next') ?? '/');
-    redirect(next.startsWith('/') && !next.startsWith('//') ? next : '/');
+    // Same-origin paths only (rejects //host and /\host, which browsers treat as external).
+    redirect(/^\/(?![/\\])/.test(next) ? next : '/');
   }
   redirect('/select-clinic');
 }

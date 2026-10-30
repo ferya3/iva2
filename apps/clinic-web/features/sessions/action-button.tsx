@@ -11,7 +11,11 @@ export function ActionButton({
   children,
   confirm,
   ...props
-}: ButtonProps & { action: (state: FormState, form: FormData) => Promise<FormState>; confirm?: string; pendingText?: string }) {
+}: ButtonProps & {
+  action: (state: FormState, form: FormData) => Promise<FormState>;
+  confirm?: string;
+  pendingText?: string;
+}) {
   const [state, formAction] = useActionState(action, { ok: true });
   return (
     <form

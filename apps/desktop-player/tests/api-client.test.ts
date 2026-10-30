@@ -8,7 +8,10 @@ const reply = (status: number, body: unknown, headers: Record<string, string> = 
 describe('PlayerApiClient', () => {
   it('sends the bearer token and JSON', async () => {
     let seen: RequestInit | undefined;
-    const client = new PlayerApiClient('https://api.test', (async (_url: string, init: RequestInit) => {
+    const client = new PlayerApiClient('https://api.test', (async (
+      _url: string,
+      init: RequestInit,
+    ) => {
       seen = init;
       return new Response(JSON.stringify({ status: 'DEVICE_CHECK' }), { status: 200 });
     }) as unknown as typeof fetch);
@@ -20,18 +23,38 @@ describe('PlayerApiClient', () => {
 
   it('maps batch outcomes for the sync worker', async () => {
     const ack = { batch_id: 'b', accepted: 1, duplicate: false, last_sequence: 1 };
-    expect(await new PlayerApiClient('x', reply(201, ack)).send(batch)).toEqual({ kind: 'acked', ack });
-    expect(await new PlayerApiClient('x', reply(409, { code: 'sequence_conflict', details: { expected_sequence: 7 } })).send(batch)).toEqual({
+    expect(await new PlayerApiClient('x', reply(201, ack)).send(batch)).toEqual({
+      kind: 'acked',
+      ack,
+    });
+    expect(
+      await new PlayerApiClient(
+        'x',
+        reply(409, { code: 'sequence_conflict', details: { expected_sequence: 7 } }),
+      ).send(batch),
+    ).toEqual({
       kind: 'sequence_conflict',
       expectedSequence: 7,
     });
-    expect((await new PlayerApiClient('x', reply(503, { message: 'down' })).send(batch)).kind).toBe('retryable');
-    expect(await new PlayerApiClient('x', reply(429, { message: 'slow' }, { 'Retry-After': '30' })).send(batch)).toMatchObject({
+    expect((await new PlayerApiClient('x', reply(503, { message: 'down' })).send(batch)).kind).toBe(
+      'retryable',
+    );
+    expect(
+      await new PlayerApiClient('x', reply(429, { message: 'slow' }, { 'Retry-After': '30' })).send(
+        batch,
+      ),
+    ).toMatchObject({
       kind: 'retryable',
       retryAfterMs: 30_000,
     });
-    expect((await new PlayerApiClient('x', reply(422, { code: 'invalid', message: 'bad' })).send(batch)).kind).toBe('rejected');
-    expect((await new PlayerApiClient('x', reply(409, { code: 'session_not_running' })).send(batch)).kind).toBe('rejected');
+    expect(
+      (await new PlayerApiClient('x', reply(422, { code: 'invalid', message: 'bad' })).send(batch))
+        .kind,
+    ).toBe('rejected');
+    expect(
+      (await new PlayerApiClient('x', reply(409, { code: 'session_not_running' })).send(batch))
+        .kind,
+    ).toBe('rejected');
   });
 
   it('treats connection errors and timeouts as retryable network failures', async () => {

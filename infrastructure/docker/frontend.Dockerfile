@@ -1,0 +1,28 @@
+# syntax=docker/dockerfile:1.7
+# Next.js panels (standalone output). Build context: repository root.
+#   docker build -f infrastructure/docker/frontend.Dockerfile --build-arg APP=clinic-web -t cognitest/clinic-web .
+
+ARG NODE_VERSION=22
+
+FROM node:${NODE_VERSION}-trixie-slim AS build
+ARG APP
+RUN corepack enable
+WORKDIR /repo
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY packages/ packages/
+COPY apps/${APP}/ apps/${APP}/
+ENV NEXT_TELEMETRY_DISABLED=1 ELECTRON_SKIP_BINARY_DOWNLOAD=1
+RUN pnpm install --frozen-lockfile --filter @cognitest/${APP}... \
+ && pnpm --filter @cognitest/${APP} build
+
+FROM node:${NODE_VERSION}-trixie-slim AS runtime
+ARG APP
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
+WORKDIR /app
+COPY --from=build --chown=node:node /repo/apps/${APP}/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/${APP}/.next/static ./apps/${APP}/.next/static
+RUN ln -s /app/apps/${APP}/server.js /app/entry.js
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+CMD ["node", "entry.js"]

@@ -13,7 +13,9 @@ describe('timeline', () => {
       const blocks = buildTimeline(DEMO_CPT_PROTOCOL, seed);
       blocks.forEach((trials, b) => {
         const def = DEMO_CPT_PROTOCOL.blocks[b]!;
-        expect(trials.filter((t) => t.isTarget)).toHaveLength(Math.round(def.trials * def.targetRatio));
+        expect(trials.filter((t) => t.isTarget)).toHaveLength(
+          Math.round(def.trials * def.targetRatio),
+        );
         for (let i = 1; i < trials.length; i++) {
           const soa = trials[i]!.onsetMs - trials[i - 1]!.onsetMs;
           expect(soa).toBeGreaterThanOrEqual(1400);
@@ -33,7 +35,9 @@ describe('timeline', () => {
   it('only uses stimuli of the trial modality and target class', () => {
     const [trials] = buildTimeline(withModalities(['visual', 'auditory'], 200), 3);
     for (const t of trials!) {
-      expect(t.stimulusId).toBe(t.modality === 'visual' ? (t.isTarget ? 'go' : 'nogo') : t.isTarget ? 'hi' : 'lo');
+      expect(t.stimulusId).toBe(
+        t.modality === 'visual' ? (t.isTarget ? 'go' : 'nogo') : t.isTarget ? 'hi' : 'lo',
+      );
     }
     expect(new Set(trials!.map((t) => t.modality)).size).toBe(2);
   });

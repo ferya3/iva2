@@ -36,9 +36,16 @@ export async function createInvite(sessionId: string, _: InviteState): Promise<I
   }
 }
 
-export async function cancelSession(sessionId: string, _: FormState, form: FormData): Promise<FormState> {
+export async function cancelSession(
+  sessionId: string,
+  _: FormState,
+  form: FormData,
+): Promise<FormState> {
   try {
-    await api(`/sessions/${sessionId}/cancel`, { method: 'POST', body: { reason: form.get('reason') || null } });
+    await api(`/sessions/${sessionId}/cancel`, {
+      method: 'POST',
+      body: { reason: form.get('reason') || null },
+    });
   } catch (e) {
     return toFormError(e);
   }

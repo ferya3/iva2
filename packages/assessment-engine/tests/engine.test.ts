@@ -73,7 +73,10 @@ describe('lifecycle', () => {
     h.engine.abort('participant_request');
     const summary = await run;
     expect(summary.state).toBe('aborted');
-    expect(h.sink.events.at(-2)).toMatchObject({ type: 'marker', label: 'abort:participant_request' });
+    expect(h.sink.events.at(-2)).toMatchObject({
+      type: 'marker',
+      label: 'abort:participant_request',
+    });
     expect(h.sink.events.at(-1)).toMatchObject({ type: 'session_ended', reason: 'aborted' });
     expect(h.visual.current).toBeNull();
     expect(h.recorder.isSealed).toBe(true);
@@ -95,10 +98,14 @@ describe('lifecycle', () => {
 
   it('records focus and visibility interruptions', async () => {
     const h = createHarness();
-    await runToEnd(h, () => null, (frame) => {
-      if (frame === 100) h.env.emit('visibility_hidden');
-      if (frame === 101) h.env.emit('visibility_visible');
-    });
+    await runToEnd(
+      h,
+      () => null,
+      (frame) => {
+        if (frame === 100) h.env.emit('visibility_hidden');
+        if (frame === 101) h.env.emit('visibility_visible');
+      },
+    );
     expect(ofType(h.sink.events, 'visibility_hidden')).toHaveLength(1);
     expect(ofType(h.sink.events, 'visibility_visible')).toHaveLength(1);
   });

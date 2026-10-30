@@ -23,7 +23,9 @@ export class SecureStore {
   ) {
     mkdirSync(dir, { recursive: true });
     if (!protector.isEncryptionAvailable()) {
-      throw new Error('OS-level encryption (safeStorage) is unavailable; refusing to store credentials in plain text.');
+      throw new Error(
+        'OS-level encryption (safeStorage) is unavailable; refusing to store credentials in plain text.',
+      );
     }
   }
 

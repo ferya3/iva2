@@ -6,7 +6,14 @@ import { ENGINE_VERSION } from '@cognitest/assessment-engine';
 import type { SessionEvent } from '@cognitest/shared-types';
 import { ApiFailure, PlayerApiClient } from './api-client';
 import { collectDeviceInfo } from './device-info';
-import { IPC, type CalibrationPayload, type PlayerSession, type RendererDeviceInfo, type Result, type UploadState } from './ipc-contract';
+import {
+  IPC,
+  type CalibrationPayload,
+  type PlayerSession,
+  type RendererDeviceInfo,
+  type Result,
+  type UploadState,
+} from './ipc-contract';
 import { PayloadCipher } from './payload-cipher';
 import { SecureStore } from './secure-store';
 import { hardenApp, tuneChromiumForTiming } from './security';
@@ -14,12 +21,21 @@ import { SqliteOutboxStore } from './sqlite-outbox-store';
 import { StateStore } from './state-store';
 import { UploadService } from './upload-service';
 
-const API_URL = process.env.COGNITEST_API_URL ?? import.meta.env.MAIN_VITE_API_URL ?? 'https://api.cognitest.ir/api/v1';
+const API_URL =
+  process.env.COGNITEST_API_URL ??
+  import.meta.env.MAIN_VITE_API_URL ??
+  'https://api.cognitest.ir/api/v1';
 const PROTOCOL = 'cognitest';
 const isDev = !app.isPackaged;
 
 tuneChromiumForTiming();
-hardenApp((url) => url.startsWith('file://') || (isDev && !!process.env.ELECTRON_RENDERER_URL && url.startsWith(process.env.ELECTRON_RENDERER_URL)));
+hardenApp(
+  (url) =>
+    url.startsWith('file://') ||
+    (isDev &&
+      !!process.env.ELECTRON_RENDERER_URL &&
+      url.startsWith(process.env.ELECTRON_RENDERER_URL)),
+);
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -53,7 +69,9 @@ function deliverDeepLink(url: string | undefined): void {
   }
 }
 
-app.on('second-instance', (_e, argv) => deliverDeepLink(argv.find((a) => a.startsWith(`${PROTOCOL}://`))));
+app.on('second-instance', (_e, argv) =>
+  deliverDeepLink(argv.find((a) => a.startsWith(`${PROTOCOL}://`))),
+);
 app.on('open-url', (event, url) => {
   event.preventDefault();
   deliverDeepLink(url);
@@ -64,9 +82,17 @@ function ok<T>(data: T): Result<T> {
 }
 function fail(error: unknown): Result<never> {
   if (error instanceof ApiFailure) {
-    return { ok: false, code: error.kind === 'network' ? 'network' : (error.code ?? `http_${error.status}`), message: error.message };
+    return {
+      ok: false,
+      code: error.kind === 'network' ? 'network' : (error.code ?? `http_${error.status}`),
+      message: error.message,
+    };
   }
-  return { ok: false, code: 'internal', message: error instanceof Error ? error.message : String(error) };
+  return {
+    ok: false,
+    code: 'internal',
+    message: error instanceof Error ? error.message : String(error),
+  };
 }
 
 async function createWindow(): Promise<void> {
@@ -107,7 +133,8 @@ async function createWindow(): Promise<void> {
     if (choice === 0) event.preventDefault();
   });
 
-  if (isDev && process.env.ELECTRON_RENDERER_URL) await win.loadURL(process.env.ELECTRON_RENDERER_URL);
+  if (isDev && process.env.ELECTRON_RENDERER_URL)
+    await win.loadURL(process.env.ELECTRON_RENDERER_URL);
   else await win.loadFile(join(import.meta.dirname, '../renderer/index.html'));
 }
 
@@ -122,7 +149,10 @@ app.whenReady().then(async () => {
     return;
   }
   const state = new StateStore(join(userData, 'state.json'), () => randomUUID());
-  const store = new SqliteOutboxStore(new DatabaseSync(join(userData, 'outbox.sqlite')), new PayloadCipher(secure.outboxKey()));
+  const store = new SqliteOutboxStore(
+    new DatabaseSync(join(userData, 'outbox.sqlite')),
+    new PayloadCipher(secure.outboxKey()),
+  );
   const api = new PlayerApiClient(API_URL, fetch, 20_000, `CognitestPlayer/${app.getVersion()}`);
   api.setToken(secure.getToken());
 
@@ -143,12 +173,20 @@ app.whenReady().then(async () => {
   const s0 = state.get();
   if (s0.sessionId && s0.finalSequence !== null && !s0.completed) uploads.start();
 
-  ipcMain.handle(IPC.appInfo, () => ({ appVersion: app.getVersion(), engineVersion: ENGINE_VERSION, platform: process.platform, apiUrl: API_URL }));
+  ipcMain.handle(IPC.appInfo, () => ({
+    appVersion: app.getVersion(),
+    engineVersion: ENGINE_VERSION,
+    platform: process.platform,
+    apiUrl: API_URL,
+  }));
 
   ipcMain.handle(IPC.resume, async () => {
     const s = state.get();
     if (s.sessionId && s.finalSequence !== null && !s.completed) {
-      return { session: null, pendingUpload: { sessionId: s.sessionId, pending: store.stats(s.sessionId).pendingEvents } };
+      return {
+        session: null,
+        pendingUpload: { sessionId: s.sessionId, pending: store.stats(s.sessionId).pendingEvents },
+      };
     }
     if (s.sessionId && !s.completed && secure.getToken()) {
       try {
@@ -164,7 +202,11 @@ app.whenReady().then(async () => {
   ipcMain.handle(IPC.join, async (_e, code: string) => {
     const s = state.get();
     if (s.sessionId && s.finalSequence !== null && !s.completed) {
-      return { ok: false, code: 'upload_pending', message: 'ارسال داده‌های آزمون قبلی هنوز کامل نشده است.' };
+      return {
+        ok: false,
+        code: 'upload_pending',
+        message: 'ارسال داده‌های آزمون قبلی هنوز کامل نشده است.',
+      };
     }
     try {
       const res = await api.join(String(code).slice(0, 16), s.deviceId);
@@ -181,7 +223,12 @@ app.whenReady().then(async () => {
 
   ipcMain.handle(IPC.deviceCheck, async (_e, info: RendererDeviceInfo) => {
     try {
-      return ok(await api.deviceCheck(state.get().sessionId!, await collectDeviceInfo(info, ENGINE_VERSION)));
+      return ok(
+        await api.deviceCheck(
+          state.get().sessionId!,
+          await collectDeviceInfo(info, ENGINE_VERSION),
+        ),
+      );
     } catch (error) {
       return fail(error);
     }
@@ -205,7 +252,9 @@ app.whenReady().then(async () => {
       if (error instanceof ApiFailure && error.kind === 'network') {
         // No connection: run anyway with a local seed; it is reported on reconnect.
         const seed = new Uint32Array(globalThis.crypto.getRandomValues(new Uint32Array(1)))[0]!;
-        state.update({ offlineStart: { seed, startedAt: new Date().toISOString(), confirmed: false } });
+        state.update({
+          offlineStart: { seed, startedAt: new Date().toISOString(), confirmed: false },
+        });
         uploads.start();
         return ok({ seed, offline: true });
       }

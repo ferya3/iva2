@@ -50,5 +50,11 @@ export function scoreSession(
       ? 'questionable'
       : 'valid';
 
-  return { algorithm_version: ALGORITHM_VERSION, validity_status, quality_flags, metrics, trial_count: scored.length };
+  return {
+    algorithm_version: ALGORITHM_VERSION,
+    validity_status,
+    quality_flags,
+    metrics,
+    trial_count: scored.length,
+  };
 }

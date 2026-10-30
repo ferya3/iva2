@@ -29,7 +29,13 @@ export function assessQuality(
   // --- Structural integrity (always critical) -------------------------------
   for (let i = 0; i < events.length; i++) {
     if (events[i]!.sequence !== i + 1) {
-      add('integrity.sequence_gap', 'critical', `event stream has a gap at position ${i + 1}`, events[i]!.sequence, i + 1);
+      add(
+        'integrity.sequence_gap',
+        'critical',
+        `event stream has a gap at position ${i + 1}`,
+        events[i]!.sequence,
+        i + 1,
+      );
       break;
     }
   }
@@ -39,20 +45,37 @@ export function assessQuality(
       break;
     }
   }
-  if (events[0]?.type !== 'session_started') add('integrity.no_start', 'critical', 'session_started is missing');
+  if (events[0]?.type !== 'session_started')
+    add('integrity.no_start', 'critical', 'session_started is missing');
   const end = events.at(-1);
-  if (end?.type !== 'session_ended') add('integrity.no_end', 'critical', 'session_ended is missing (incomplete upload?)');
-  else if (end.reason === 'aborted') add('run.aborted', 'critical', 'the session was aborted before completion');
+  if (end?.type !== 'session_ended')
+    add('integrity.no_end', 'critical', 'session_ended is missing (incomplete upload?)');
+  else if (end.reason === 'aborted')
+    add('run.aborted', 'critical', 'the session was aborted before completion');
 
   // --- Presentation timing ---------------------------------------------------
   const scored = trials.filter((t) => !t.practice);
   if (scored.length) {
-    const late = scored.filter((t) => t.stimulus.presentation_status === 'late').length / scored.length;
+    const late =
+      scored.filter((t) => t.stimulus.presentation_status === 'late').length / scored.length;
     const rLate = rules.lateOnsetRatio;
-    add('timing.late_onsets', severity(late, rLate), `${(late * 100).toFixed(1)}% of stimuli started late`, late, rLate.warn);
-    const dropped = scored.filter((t) => t.stimulus.presentation_status === 'dropped').length / scored.length;
+    add(
+      'timing.late_onsets',
+      severity(late, rLate),
+      `${(late * 100).toFixed(1)}% of stimuli started late`,
+      late,
+      rLate.warn,
+    );
+    const dropped =
+      scored.filter((t) => t.stimulus.presentation_status === 'dropped').length / scored.length;
     const rDrop = rules.droppedStimulusRatio;
-    add('timing.dropped_stimuli', severity(dropped, rDrop), `${(dropped * 100).toFixed(1)}% of stimuli were not presented`, dropped, rDrop.warn);
+    add(
+      'timing.dropped_stimuli',
+      severity(dropped, rDrop),
+      `${(dropped * 100).toFixed(1)}% of stimuli were not presented`,
+      dropped,
+      rDrop.warn,
+    );
   } else {
     add('run.no_trials', 'critical', 'no scored trials were presented');
   }
@@ -78,19 +101,43 @@ export function assessQuality(
     }
   }
   if (hiddenSince !== null) hidden += (end?.timestamp_ms ?? hiddenSince) - hiddenSince;
-  add('environment.hidden', severity(hidden, rules.hiddenTimeMs), `test window was hidden for ${Math.round(hidden)} ms`, hidden, rules.hiddenTimeMs.warn);
+  add(
+    'environment.hidden',
+    severity(hidden, rules.hiddenTimeMs),
+    `test window was hidden for ${Math.round(hidden)} ms`,
+    hidden,
+    rules.hiddenTimeMs.warn,
+  );
 
   const focus = events.filter((e) => e.type === 'focus_lost').length;
-  add('environment.focus_lost', severity(focus, rules.focusLossCount), `window lost focus ${focus} time(s)`, focus, rules.focusLossCount.warn);
+  add(
+    'environment.focus_lost',
+    severity(focus, rules.focusLossCount),
+    `window lost focus ${focus} time(s)`,
+    focus,
+    rules.focusLossCount.warn,
+  );
 
   const audio = events.filter((e) => e.type === 'audio_error').length;
-  add('audio.errors', severity(audio, rules.audioErrors), `${audio} audio error(s) reported`, audio, rules.audioErrors.warn);
+  add(
+    'audio.errors',
+    severity(audio, rules.audioErrors),
+    `${audio} audio error(s) reported`,
+    audio,
+    rules.audioErrors.warn,
+  );
 
   // --- Engagement ------------------------------------------------------------
   const targets = scored.filter((t) => t.stimulus.is_target && !t.excluded);
   if (targets.length) {
     const om = targets.filter((t) => t.outcome === 'omission').length / targets.length;
-    add('engagement.omissions', severity(om, rules.omissionRate), `omission rate ${(om * 100).toFixed(1)}% — check engagement/understanding`, om, rules.omissionRate.warn);
+    add(
+      'engagement.omissions',
+      severity(om, rules.omissionRate),
+      `omission rate ${(om * 100).toFixed(1)}% — check engagement/understanding`,
+      om,
+      rules.omissionRate.warn,
+    );
   }
 
   return flags;

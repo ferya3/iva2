@@ -29,12 +29,37 @@ export function BlockChart({ points }: { points: BlockPoint[] }) {
         tooltip: { trigger: 'axis' },
         xAxis: { type: 'category', data: points.map((p) => p.block), inverse: true },
         yAxis: [
-          { type: 'value', name: 'ms', position: 'right', splitLine: { lineStyle: { color: '#eef2f7' } } },
-          { type: 'value', min: 0, max: 1, position: 'left', axisLabel: { formatter: (v: number) => `${Math.round(v * 100)}%` }, splitLine: { show: false } },
+          {
+            type: 'value',
+            name: 'ms',
+            position: 'right',
+            splitLine: { lineStyle: { color: '#eef2f7' } },
+          },
+          {
+            type: 'value',
+            min: 0,
+            max: 1,
+            position: 'left',
+            axisLabel: { formatter: (v: number) => `${Math.round(v * 100)}%` },
+            splitLine: { show: false },
+          },
         ],
         series: [
-          { name: 'میانگین زمان واکنش (ms)', type: 'bar', data: points.map((p) => p.rtMean), itemStyle: { color: '#14b8a6', borderRadius: [4, 4, 0, 0] }, barMaxWidth: 36 },
-          { name: 'نرخ پاسخ صحیح', type: 'line', yAxisIndex: 1, data: points.map((p) => p.hitRate), itemStyle: { color: '#6366f1' }, smooth: true },
+          {
+            name: 'میانگین زمان واکنش (ms)',
+            type: 'bar',
+            data: points.map((p) => p.rtMean),
+            itemStyle: { color: '#14b8a6', borderRadius: [4, 4, 0, 0] },
+            barMaxWidth: 36,
+          },
+          {
+            name: 'نرخ پاسخ صحیح',
+            type: 'line',
+            yAxisIndex: 1,
+            data: points.map((p) => p.hitRate),
+            itemStyle: { color: '#6366f1' },
+            smooth: true,
+          },
         ],
       });
       window.addEventListener('resize', onResize);
@@ -50,8 +75,12 @@ export function BlockChart({ points }: { points: BlockPoint[] }) {
   return (
     <figure>
       <figcaption className="mb-2 flex flex-wrap gap-4 text-xs text-slate-600">
-        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#14b8a6]" /> میانگین زمان واکنش (میلی‌ثانیه)</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-4 bg-[#6366f1]" /> نرخ پاسخ صحیح</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#14b8a6]" /> میانگین زمان واکنش (میلی‌ثانیه)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-0.5 w-4 bg-[#6366f1]" /> نرخ پاسخ صحیح
+        </span>
         <span className="text-slate-400">به تفکیک بلوک آزمون</span>
       </figcaption>
       <div ref={ref} className="h-72 w-full" role="img" aria-label="نمودار عملکرد به تفکیک بلوک" />

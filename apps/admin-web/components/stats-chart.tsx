@@ -18,7 +18,13 @@ export function SessionsPerDayChart({ data }: { data: Record<string, number> }) 
         tooltip: { trigger: 'axis' },
         xAxis: { type: 'category', data: days.map((d) => d.slice(5)), inverse: true },
         yAxis: { type: 'value', minInterval: 1, position: 'right' },
-        series: [{ type: 'bar', data: days.map((d) => data[d]), itemStyle: { color: '#0d9488', borderRadius: [3, 3, 0, 0] } }],
+        series: [
+          {
+            type: 'bar',
+            data: days.map((d) => data[d]),
+            itemStyle: { color: '#0d9488', borderRadius: [3, 3, 0, 0] },
+          },
+        ],
       });
     });
     return () => {
@@ -26,5 +32,7 @@ export function SessionsPerDayChart({ data }: { data: Record<string, number> }) 
       chart?.dispose();
     };
   }, [data]);
-  return <div ref={ref} className="h-64 w-full" role="img" aria-label="تعداد جلسات در ۳۰ روز اخیر" />;
+  return (
+    <div ref={ref} className="h-64 w-full" role="img" aria-label="تعداد جلسات در ۳۰ روز اخیر" />
+  );
 }

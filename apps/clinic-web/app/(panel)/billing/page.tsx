@@ -41,7 +41,10 @@ export default async function BillingPage() {
                 </p>
                 {limit ? (
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, (used / limit) * 100)}%` }} />
+                    <div
+                      className="h-full rounded-full bg-brand-500"
+                      style={{ width: `${Math.min(100, (used / limit) * 100)}%` }}
+                    />
                   </div>
                 ) : null}
               </div>
@@ -57,13 +60,18 @@ export default async function BillingPage() {
             <CardBody>
               <p className="ltr text-start font-semibold">{p.name}</p>
               <ul className="mt-3 space-y-1 text-sm text-slate-600">
-                {p.features.map((f) => <li key={f}>• {f}</li>)}
+                {p.features.map((f) => (
+                  <li key={f}>• {f}</li>
+                ))}
               </ul>
             </CardBody>
           </Card>
         ))}
       </div>
-      <p className="mt-4 text-sm text-slate-500">برای ارتقای پلن یا تمدید با پشتیبانی تماس بگیرید. پرداخت آنلاین از طریق درگاه داخلی در نسخه بعدی فعال می‌شود.</p>
+      <p className="mt-4 text-sm text-slate-500">
+        برای ارتقای پلن یا تمدید با پشتیبانی تماس بگیرید. پرداخت آنلاین از طریق درگاه داخلی در نسخه
+        بعدی فعال می‌شود.
+      </p>
     </>
   );
 }

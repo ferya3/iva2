@@ -68,7 +68,9 @@ describe('calibration verdict', () => {
   });
 
   it('reports audio latencies in milliseconds', () => {
-    expect(describeAudioContext({ sampleRate: 48000, baseLatency: 0.01, outputLatency: 0.04 })).toEqual({
+    expect(
+      describeAudioContext({ sampleRate: 48000, baseLatency: 0.01, outputLatency: 0.04 }),
+    ).toEqual({
       available: true,
       sample_rate: 48000,
       base_latency_ms: 10,

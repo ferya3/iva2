@@ -19,7 +19,10 @@ export default async function SelectClinicPage() {
       <p className="mb-6 text-sm text-slate-500">{me.user.name}، با کدام کلینیک کار می‌کنید؟</p>
       <Card>
         {me.memberships.length === 0 ? (
-          <EmptyState title="عضو هیچ کلینیکی نیستید" description="از مدیر کلینیک بخواهید شما را به تیم اضافه کند." />
+          <EmptyState
+            title="عضو هیچ کلینیکی نیستید"
+            description="از مدیر کلینیک بخواهید شما را به تیم اضافه کند."
+          />
         ) : (
           <ul className="divide-y divide-slate-100">
             {me.memberships.map((m) => (

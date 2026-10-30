@@ -3,7 +3,17 @@ import { cn } from '@cognitest/ui';
 
 const STEPS = ['ورود', 'بررسی تجهیزات', 'کالیبراسیون', 'آزمون', 'ارسال داده'];
 
-export function Shell({ step, title, children, footer }: { step: number; title: ReactNode; children: ReactNode; footer?: ReactNode }) {
+export function Shell({
+  step,
+  title,
+  children,
+  footer,
+}: {
+  step: number;
+  title: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-slate-50 to-brand-50/40">
       <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-4 backdrop-blur">
@@ -12,7 +22,14 @@ export function Shell({ step, title, children, footer }: { step: number; title: 
           {STEPS.map((label, i) => (
             <li
               key={label}
-              className={cn('rounded-full px-3 py-1', i === step ? 'bg-brand-600 text-white' : i < step ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-400')}
+              className={cn(
+                'rounded-full px-3 py-1',
+                i === step
+                  ? 'bg-brand-600 text-white'
+                  : i < step
+                    ? 'bg-brand-100 text-brand-700'
+                    : 'bg-slate-100 text-slate-400',
+              )}
             >
               {label}
             </li>

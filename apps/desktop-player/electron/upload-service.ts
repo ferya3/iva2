@@ -36,7 +36,10 @@ export class UploadService {
     const loop = async () => {
       if (this.stopped) return;
       const state = await this.tick();
-      const delay = state.phase === 'waiting' ? Math.min(60_000, 2_000 * 2 ** Math.min(this.failures, 5)) : intervalMs;
+      const delay =
+        state.phase === 'waiting'
+          ? Math.min(60_000, 2_000 * 2 ** Math.min(this.failures, 5))
+          : intervalMs;
       if (state.phase !== 'completed' && state.phase !== 'failed') this.schedule(loop, delay);
     };
     this.schedule(loop, 0);
@@ -44,12 +47,14 @@ export class UploadService {
 
   stop(): void {
     this.stopped = true;
-    if (this.timer !== null) (this.d.clearTimer ?? clearTimeout)(this.timer as ReturnType<typeof setTimeout>);
+    if (this.timer !== null)
+      (this.d.clearTimer ?? clearTimeout)(this.timer as ReturnType<typeof setTimeout>);
     this.timer = null;
   }
 
   private schedule(fn: () => void, ms: number): void {
-    if (this.timer !== null) (this.d.clearTimer ?? clearTimeout)(this.timer as ReturnType<typeof setTimeout>);
+    if (this.timer !== null)
+      (this.d.clearTimer ?? clearTimeout)(this.timer as ReturnType<typeof setTimeout>);
     this.timer = (this.d.setTimer ?? setTimeout)(fn, ms);
   }
 
@@ -64,26 +69,45 @@ export class UploadService {
     try {
       // 1. A run started offline must be registered before events are accepted.
       if (s.offlineStart && !s.offlineStart.confirmed) {
-        await api.start(s.sessionId, { seed: s.offlineStart.seed, startedAt: s.offlineStart.startedAt });
+        await api.start(s.sessionId, {
+          seed: s.offlineStart.seed,
+          startedAt: s.offlineStart.startedAt,
+        });
         state.update({ offlineStart: { ...s.offlineStart, confirmed: true } });
       }
 
       // 2. Drain whatever is in the outbox (no internal sleeping: the loop backs off).
       let syncState: SyncState = { status: 'idle' };
       if (store.stats(s.sessionId).pendingEvents > 0) {
-        syncState = await new SyncWorker({ store, transport: api, sessionId: s.sessionId, engineVersion: this.d.engineVersion }).flush({ retry: false });
+        syncState = await new SyncWorker({
+          store,
+          transport: api,
+          sessionId: s.sessionId,
+          engineVersion: this.d.engineVersion,
+        }).flush({ retry: false });
       }
-      if (syncState.status === 'failed') return this.publish({ phase: 'failed', reason: syncState.reason });
+      if (syncState.status === 'failed')
+        return this.publish({ phase: 'failed', reason: syncState.reason });
       if (syncState.status === 'waiting') {
         this.failures++;
-        return this.publish({ phase: 'waiting', pending: store.stats(s.sessionId).pendingEvents, retryInMs: 0, lastError: syncState.lastError });
+        return this.publish({
+          phase: 'waiting',
+          pending: store.stats(s.sessionId).pendingEvents,
+          retryInMs: 0,
+          lastError: syncState.lastError,
+        });
       }
 
       // 3. Everything uploaded and the run is over → confirm completion.
       const fresh = state.get();
       if (fresh.finalSequence !== null && store.stats(s.sessionId).pendingEvents === 0) {
         const res = await api.complete(s.sessionId, fresh.finalSequence);
-        if (res.status === 'COMPLETED' || res.status === 'VALIDATED' || res.status === 'INVALID' || res.status === 'REPORTED') {
+        if (
+          res.status === 'COMPLETED' ||
+          res.status === 'VALIDATED' ||
+          res.status === 'INVALID' ||
+          res.status === 'REPORTED'
+        ) {
           state.update({ completed: true });
           store.forget(s.sessionId);
           this.d.onCompleted(s.sessionId);
@@ -95,7 +119,10 @@ export class UploadService {
       return this.publish(this.snapshot());
     } catch (error) {
       if (error instanceof ApiFailure && !error.retryable) {
-        return this.publish({ phase: 'failed', reason: `${error.code ?? error.status}: ${error.message}` });
+        return this.publish({
+          phase: 'failed',
+          reason: `${error.code ?? error.status}: ${error.message}`,
+        });
       }
       this.failures++;
       const sid = s.sessionId;
@@ -113,7 +140,12 @@ export class UploadService {
   private snapshot(): UploadState {
     const s = this.d.state.get();
     const stats = this.d.store.stats(s.sessionId!);
-    return { phase: 'syncing', pending: stats.pendingEvents, lastAcked: stats.lastAckedSequence, finalSequence: s.finalSequence };
+    return {
+      phase: 'syncing',
+      pending: stats.pendingEvents,
+      lastAcked: stats.lastAckedSequence,
+      finalSequence: s.finalSequence,
+    };
   }
 
   private publish(state: UploadState): UploadState {

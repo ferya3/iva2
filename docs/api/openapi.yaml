@@ -1,0 +1,584 @@
+openapi: 3.1.0
+info:
+  title: Cognitest API
+  version: 1.0.0
+  description: |
+    Central API of the Cognitest platform. Three audiences:
+
+    * **clinic-web** — Sanctum bearer token + `X-Tenant-ID` header (clinic-scoped routes)
+    * **admin-web** — Sanctum bearer token of a platform administrator (`/admin/*`)
+    * **desktop player** — per-session player token obtained from `/player/join`
+
+    Errors use `{ "message": string, "code": string, "details"?: object, "errors"?: object }`.
+    Clients branch on `code`, never on the message text.
+servers:
+  - url: https://api.cognitest.ir/api/v1
+  - url: http://localhost:8000/api/v1
+security:
+  - bearer: []
+tags:
+  - { name: Auth }
+  - { name: Clinics }
+  - { name: Patients }
+  - { name: Assessment }
+  - { name: Player, description: Desktop player endpoints (player token) }
+  - { name: Reports }
+  - { name: Admin }
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Log in (rate limited 5 attempts / minute / e-mail+IP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              {
+                type: object,
+                required: [email, password],
+                properties:
+                  {
+                    email: { type: string, format: email },
+                    password: { type: string },
+                    device_name: { type: string },
+                  },
+              }
+      responses:
+        '200':
+          {
+            description: Token,
+            content:
+              { application/json: { schema: { $ref: '#/components/schemas/TokenResponse' } } },
+          }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /auth/me:
+    get:
+      {
+        tags: [Auth],
+        summary: Current user and clinic memberships,
+        responses: { '200': { description: OK } },
+      }
+  /auth/refresh:
+    post:
+      {
+        tags: [Auth],
+        summary: Rotate the bearer token (old token revoked),
+        responses: { '200': { description: New token } },
+      }
+  /auth/logout:
+    post:
+      { tags: [Auth], summary: Revoke the current token, responses: { '200': { description: OK } } }
+
+  /tenants:
+    get:
+      {
+        tags: [Clinics],
+        summary: Clinics the user belongs to,
+        responses: { '200': { description: OK } },
+      }
+    post:
+      {
+        tags: [Clinics],
+        summary: Self-service clinic sign-up (creator becomes owner,
+        trial plan),
+        responses: { '201': { description: Created } },
+      }
+  /tenant:
+    get:
+      {
+        tags: [Clinics],
+        summary: Active clinic,
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses: { '200': { description: OK } },
+      }
+    patch:
+      {
+        tags: [Clinics],
+        summary: 'Update clinic (permission: tenant.manage)',
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses: { '200': { description: OK } },
+      }
+  /tenant/members:
+    get:
+      {
+        tags: [Clinics],
+        summary: 'Members (permission: members.manage)',
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses: { '200': { description: OK } },
+      }
+    post:
+      {
+        tags: [Clinics],
+        summary: Add a member (plan limit applies),
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses:
+          { '201': { description: Created }, '402': { $ref: '#/components/responses/Error' } },
+      }
+  /dashboard:
+    get:
+      {
+        tags: [Clinics],
+        summary: Clinic statistics,
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses: { '200': { description: OK } },
+      }
+
+  /patients:
+    parameters: [{ $ref: '#/components/parameters/Tenant' }]
+    get:
+      tags: [Patients]
+      summary: List / search (name, code, exact national id via blind index)
+      parameters:
+        [
+          { name: q, in: query, schema: { type: string } },
+          { name: page, in: query, schema: { type: integer } },
+        ]
+      responses: { '200': { description: Paginated patients } }
+    post:
+      {
+        tags: [Patients],
+        summary: Register a patient (identity data encrypted),
+        responses:
+          { '201': { description: Created }, '422': { $ref: '#/components/responses/Error' } },
+      }
+  /patients/{patient}:
+    parameters:
+      [
+        { $ref: '#/components/parameters/Tenant' },
+        { name: patient, in: path, required: true, schema: { type: string, format: uuid } },
+      ]
+    get:
+      {
+        tags: [Patients],
+        summary: Patient detail (access is audited),
+        responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/Error' } },
+      }
+    patch: { tags: [Patients], summary: Update, responses: { '200': { description: OK } } }
+    delete:
+      { tags: [Patients], summary: Soft delete, responses: { '204': { description: Deleted } } }
+  /patients/{patient}/sessions:
+    get:
+      {
+        tags: [Patients],
+        summary: Session history,
+        parameters:
+          [
+            { $ref: '#/components/parameters/Tenant' },
+            { name: patient, in: path, required: true, schema: { type: string, format: uuid } },
+          ],
+        responses: { '200': { description: OK } },
+      }
+
+  /assessment-types:
+    get:
+      {
+        tags: [Assessment],
+        summary: Catalogue with published versions,
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses: { '200': { description: OK } },
+      }
+  /assessment-versions:
+    get:
+      {
+        tags: [Assessment],
+        summary: Published versions,
+        parameters: [{ $ref: '#/components/parameters/Tenant' }],
+        responses: { '200': { description: OK } },
+      }
+  /sessions:
+    parameters: [{ $ref: '#/components/parameters/Tenant' }]
+    get:
+      {
+        tags: [Assessment],
+        summary: List sessions (filters status,
+        patient_id,
+        pending),
+        responses: { '200': { description: OK } },
+      }
+    post:
+      tags: [Assessment]
+      summary: Create a session (plan quota applies)
+      requestBody:
+        {
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    {
+                      type: object,
+                      required: [patient_id, assessment_version_id],
+                      properties:
+                        {
+                          patient_id: { type: string, format: uuid },
+                          assessment_version_id: { type: string, format: uuid },
+                          notes: { type: string },
+                        },
+                    },
+                },
+            },
+        }
+      responses:
+        { '201': { description: Created }, '402': { $ref: '#/components/responses/Error' } }
+  /sessions/{session}:
+    get:
+      {
+        tags: [Assessment],
+        summary: Session with calibration and status history,
+        parameters:
+          [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }],
+        responses: { '200': { description: OK } },
+      }
+  /sessions/{session}/invite:
+    post:
+      tags: [Assessment]
+      summary: Issue a one-time invite code (CREATED→INVITED); previous codes are revoked
+      parameters:
+        [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }]
+      responses:
+        {
+          '201':
+            {
+              description: Invite,
+              content: { application/json: { schema: { $ref: '#/components/schemas/Invite' } } },
+            },
+        }
+  /sessions/{session}/cancel:
+    post:
+      {
+        tags: [Assessment],
+        summary: Cancel before the run starts,
+        parameters:
+          [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }],
+        responses: { '200': { description: OK } },
+      }
+  /sessions/{session}/score:
+    post:
+      {
+        tags: [Reports],
+        summary: Queue a (re-)scoring run,
+        parameters:
+          [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }],
+        responses: { '202': { description: Queued } },
+      }
+  /sessions/{session}/results:
+    get:
+      {
+        tags: [Reports],
+        summary: Latest scoring run (metrics,
+        validity,
+        quality flags),
+        parameters:
+          [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }],
+        responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/Error' } },
+      }
+  /sessions/{session}/report:
+    get:
+      {
+        tags: [Reports],
+        summary: Latest report version (access logged),
+        parameters:
+          [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }],
+        responses: { '200': { description: OK } },
+      }
+  /sessions/{session}/reports:
+    post:
+      {
+        tags: [Reports],
+        summary: Issue a new immutable report version (VALIDATED→REPORTED) and queue its PDF,
+        parameters:
+          [{ $ref: '#/components/parameters/Tenant' }, { $ref: '#/components/parameters/Session' }],
+        responses: { '201': { description: Created } },
+      }
+  /reports/{report}/generate:
+    post:
+      {
+        tags: [Reports],
+        summary: Re-render the PDF of a report version,
+        parameters:
+          [
+            { $ref: '#/components/parameters/Tenant' },
+            { name: report, in: path, required: true, schema: { type: string, format: uuid } },
+          ],
+        responses: { '202': { description: Queued } },
+      }
+  /reports/{report}/download:
+    get:
+      {
+        tags: [Reports],
+        summary: Download the PDF (access logged),
+        parameters:
+          [
+            { $ref: '#/components/parameters/Tenant' },
+            { name: report, in: path, required: true, schema: { type: string, format: uuid } },
+          ],
+        responses:
+          {
+            '200': { description: PDF, content: { application/pdf: {} } },
+            '409': { $ref: '#/components/responses/Error' },
+          },
+      }
+
+  /player/join:
+    post:
+      tags: [Player]
+      security: []
+      summary: Exchange an invite code for a per-session player token
+      requestBody:
+        {
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    {
+                      type: object,
+                      required: [code, device_id],
+                      properties:
+                        {
+                          code: { type: string, example: K7M-4Q9-X2P },
+                          device_id: { type: string },
+                        },
+                    },
+                },
+            },
+        }
+      responses:
+        {
+          '200': { description: Token + session (incl. protocol definition) },
+          '422': { $ref: '#/components/responses/Error' },
+        }
+  /player/session:
+    get:
+      {
+        tags: [Player],
+        security: [{ player: [] }],
+        summary: Session of the token,
+        responses: { '200': { description: OK } },
+      }
+  /sessions/{session}/device-check:
+    post:
+      tags: [Player]
+      security: [{ player: [] }]
+      parameters: [{ $ref: '#/components/parameters/Session' }]
+      requestBody:
+        {
+          content:
+            { application/json: { schema: { $ref: './schemas/device-profile.schema.json' } } },
+        }
+      responses: { '200': { description: OK } }
+  /sessions/{session}/calibration:
+    post:
+      tags: [Player]
+      security: [{ player: [] }]
+      summary: Submit calibration; the server re-evaluates thresholds and keeps the stricter verdict
+      parameters: [{ $ref: '#/components/parameters/Session' }]
+      requestBody:
+        {
+          content:
+            { application/json: { schema: { $ref: './schemas/calibration-result.schema.json' } } },
+        }
+      responses: { '200': { description: 'verdict, reasons, status (READY unless fail)' } }
+  /sessions/{session}/start:
+    post:
+      tags: [Player]
+      security: [{ player: [] }]
+      summary: READY→RUNNING. Returns the server-chosen seed; an offline-started run reports its own.
+      parameters: [{ $ref: '#/components/parameters/Session' }]
+      requestBody:
+        {
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    {
+                      type: object,
+                      properties:
+                        {
+                          offline_seed: { type: integer, minimum: 0, maximum: 4294967295 },
+                          offline_started_at: { type: string, format: date-time },
+                        },
+                    },
+                },
+            },
+        }
+      responses:
+        {
+          '200': { description: '{ status, seed, started_at }' },
+          '409': { $ref: '#/components/responses/Error' },
+        }
+  /sessions/{session}/events/batch:
+    post:
+      tags: [Player]
+      security: [{ player: [] }]
+      summary: Append a batch of raw events (idempotent by batch_id, gap-free by sequence)
+      description: |
+        * `201` stored · `200` duplicate replay of an already stored batch (same payload)
+        * `409 sequence_conflict` — `details.expected_sequence` tells the player where to resume
+        * `422 batch_id_reused` — same batch_id with different content
+        * `409 session_not_running` — session is not RUNNING/UPLOADING
+      parameters: [{ $ref: '#/components/parameters/Session' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: './schemas/event-batch.schema.json' } } },
+        }
+      responses:
+        '201':
+          {
+            description: Stored,
+            content: { application/json: { schema: { $ref: '#/components/schemas/BatchAck' } } },
+          }
+        '200':
+          {
+            description: Duplicate,
+            content: { application/json: { schema: { $ref: '#/components/schemas/BatchAck' } } },
+          }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /sessions/{session}/complete:
+    post:
+      tags: [Player]
+      security: [{ player: [] }]
+      summary: Announce the final sequence; completes now (200) or once missing batches arrive (202)
+      parameters: [{ $ref: '#/components/parameters/Session' }]
+      requestBody:
+        {
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    {
+                      type: object,
+                      required: [final_sequence],
+                      properties: { final_sequence: { type: integer, minimum: 1 } },
+                    },
+                },
+            },
+        }
+      responses:
+        {
+          '200': { description: COMPLETED },
+          '202': { description: 'UPLOADING; missing_from tells which sequence is still missing' },
+        }
+
+  /admin/stats:
+    {
+      get:
+        { tags: [Admin], summary: Platform statistics, responses: { '200': { description: OK } } },
+    }
+  /admin/tenants:
+    {
+      get: { tags: [Admin], summary: All clinics, responses: { '200': { description: OK } } },
+      post:
+        {
+          tags: [Admin],
+          summary: Provision a clinic with owner and plan,
+          responses: { '201': { description: Created } },
+        },
+    }
+  /admin/tenants/{tenant}:
+    {
+      patch:
+        {
+          tags: [Admin],
+          summary: Rename / suspend / activate,
+          parameters:
+            [{ name: tenant, in: path, required: true, schema: { type: string, format: uuid } }],
+          responses: { '200': { description: OK } },
+        },
+    }
+  /admin/plans:
+    {
+      get: { tags: [Admin], summary: Plans, responses: { '200': { description: OK } } },
+      post: { tags: [Admin], summary: Create plan, responses: { '201': { description: Created } } },
+    }
+  /admin/assessments:
+    {
+      get:
+        {
+          tags: [Admin],
+          summary: Catalogue incl. drafts,
+          responses: { '200': { description: OK } },
+        },
+    }
+  /admin/assessment-types/{type}/versions:
+    {
+      post:
+        {
+          tags: [Admin],
+          summary: Create a draft version (protocol,
+          validation rules,
+          scoring version),
+          parameters:
+            [{ name: type, in: path, required: true, schema: { type: string, format: uuid } }],
+          responses: { '201': { description: Created } },
+        },
+    }
+  /admin/assessment-versions/{version}/publish:
+    {
+      post:
+        {
+          tags: [Admin],
+          summary: Publish (definition becomes immutable),
+          parameters:
+            [{ name: version, in: path, required: true, schema: { type: string, format: uuid } }],
+          responses: { '200': { description: OK } },
+        },
+    }
+  /admin/audit-logs:
+    { get: { tags: [Admin], summary: Audit trail, responses: { '200': { description: OK } } } }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, description: Sanctum personal access token }
+    player: { type: http, scheme: bearer, description: Per-session player token from /player/join }
+  parameters:
+    Tenant:
+      { name: X-Tenant-ID, in: header, required: true, schema: { type: string, format: uuid } }
+    Session: { name: session, in: path, required: true, schema: { type: string, format: uuid } }
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message: { type: string }
+              code: { type: string, example: sequence_conflict }
+              details: { type: object, additionalProperties: true }
+              errors:
+                { type: object, additionalProperties: { type: array, items: { type: string } } }
+  schemas:
+    TokenResponse:
+      type: object
+      properties:
+        {
+          token: { type: string },
+          expires_at: { type: string, format: date-time },
+          user: { type: object },
+        }
+    Invite:
+      type: object
+      properties:
+        session_id: { type: string, format: uuid }
+        code: { type: string, example: K7M-4Q9-X2P }
+        deep_link: { type: string, example: 'cognitest://join?code=K7M-4Q9-X2P' }
+        expires_at: { type: string, format: date-time }
+    BatchAck:
+      type: object
+      required: [batch_id, accepted, duplicate, last_sequence]
+      properties:
+        batch_id: { type: string, format: uuid }
+        accepted: { type: integer }
+        duplicate: { type: boolean }
+        last_sequence: { type: integer }

@@ -1,6 +1,12 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { SessionEvent } from '@cognitest/shared-types';
-import { defaultIdFactory, type IdFactory, type OutboxBatch, type OutboxStats, type OutboxStore } from '@cognitest/event-recorder';
+import {
+  defaultIdFactory,
+  type IdFactory,
+  type OutboxBatch,
+  type OutboxStats,
+  type OutboxStore,
+} from '@cognitest/event-recorder';
 import type { PayloadCipher } from './payload-cipher';
 
 /**
@@ -61,7 +67,11 @@ export class SqliteOutboxStore implements OutboxStore {
 
   private sessionRow(id: string) {
     this.db.prepare('INSERT OR IGNORE INTO outbox_sessions (session_id) VALUES (?)').run(id);
-    return this.db.prepare('SELECT last_acked, last_recorded, failure FROM outbox_sessions WHERE session_id = ?').get(id) as {
+    return this.db
+      .prepare(
+        'SELECT last_acked, last_recorded, failure FROM outbox_sessions WHERE session_id = ?',
+      )
+      .get(id) as {
       last_acked: number;
       last_recorded: number;
       failure: string | null;
@@ -77,13 +87,22 @@ export class SqliteOutboxStore implements OutboxStore {
     if (events.length === 0) return;
     this.tx(() => {
       let last = this.sessionRow(sessionId).last_recorded;
-      const insert = this.db.prepare('INSERT INTO outbox_events (session_id, sequence, payload) VALUES (?, ?, ?)');
+      const insert = this.db.prepare(
+        'INSERT INTO outbox_events (session_id, sequence, payload) VALUES (?, ?, ?)',
+      );
       for (const e of events) {
-        if (e.sequence !== last + 1) throw new Error(`outbox expected sequence ${last + 1}, got ${e.sequence}`);
-        insert.run(sessionId, e.sequence, this.cipher.encrypt(JSON.stringify(e), this.aad(sessionId, e.sequence)));
+        if (e.sequence !== last + 1)
+          throw new Error(`outbox expected sequence ${last + 1}, got ${e.sequence}`);
+        insert.run(
+          sessionId,
+          e.sequence,
+          this.cipher.encrypt(JSON.stringify(e), this.aad(sessionId, e.sequence)),
+        );
         last = e.sequence;
       }
-      this.db.prepare('UPDATE outbox_sessions SET last_recorded = ? WHERE session_id = ?').run(last, sessionId);
+      this.db
+        .prepare('UPDATE outbox_sessions SET last_recorded = ? WHERE session_id = ?')
+        .run(last, sessionId);
     });
   }
 
@@ -91,10 +110,14 @@ export class SqliteOutboxStore implements OutboxStore {
     return this.tx(() => {
       if (this.sessionRow(sessionId).failure) return null;
       let batch = this.db
-        .prepare('SELECT batch_id, attempts FROM outbox_batches WHERE session_id = ? ORDER BY created_at LIMIT 1')
+        .prepare(
+          'SELECT batch_id, attempts FROM outbox_batches WHERE session_id = ? ORDER BY created_at LIMIT 1',
+        )
         .get(sessionId) as { batch_id: string; attempts: number } | undefined;
       if (!batch) {
-        const first = this.db.prepare('SELECT 1 FROM outbox_events WHERE session_id = ? LIMIT 1').get(sessionId);
+        const first = this.db
+          .prepare('SELECT 1 FROM outbox_events WHERE session_id = ? LIMIT 1')
+          .get(sessionId);
         if (!first) return null;
         batch = { batch_id: this.newId(), attempts: 0 };
         this.db
@@ -114,14 +137,21 @@ export class SqliteOutboxStore implements OutboxStore {
         batchId: batch.batch_id,
         sessionId,
         attempts: batch.attempts,
-        events: rows.map((r) => JSON.parse(this.cipher.decrypt(r.payload, this.aad(sessionId, r.sequence))) as SessionEvent),
+        events: rows.map(
+          (r) =>
+            JSON.parse(
+              this.cipher.decrypt(r.payload, this.aad(sessionId, r.sequence)),
+            ) as SessionEvent,
+        ),
       };
     });
   }
 
   recordAttempt(sessionId: string, batchId: string, error: string | null): void {
     this.db
-      .prepare('UPDATE outbox_batches SET attempts = attempts + 1, last_error = ? WHERE batch_id = ? AND session_id = ?')
+      .prepare(
+        'UPDATE outbox_batches SET attempts = attempts + 1, last_error = ? WHERE batch_id = ? AND session_id = ?',
+      )
       .run(error, batchId, sessionId);
   }
 
@@ -131,13 +161,19 @@ export class SqliteOutboxStore implements OutboxStore {
       // Dissolve batches that contain acknowledged events (remaining events
       // of a partially acknowledged batch are re-batched with a new id).
       const batches = this.db
-        .prepare('SELECT DISTINCT batch_id FROM outbox_events WHERE session_id = ? AND sequence <= ? AND batch_id IS NOT NULL')
+        .prepare(
+          'SELECT DISTINCT batch_id FROM outbox_events WHERE session_id = ? AND sequence <= ? AND batch_id IS NOT NULL',
+        )
         .all(sessionId, sequence) as Array<{ batch_id: string }>;
       for (const b of batches) {
-        this.db.prepare('UPDATE outbox_events SET batch_id = NULL WHERE batch_id = ?').run(b.batch_id);
+        this.db
+          .prepare('UPDATE outbox_events SET batch_id = NULL WHERE batch_id = ?')
+          .run(b.batch_id);
         this.db.prepare('DELETE FROM outbox_batches WHERE batch_id = ?').run(b.batch_id);
       }
-      this.db.prepare('DELETE FROM outbox_events WHERE session_id = ? AND sequence <= ?').run(sessionId, sequence);
+      this.db
+        .prepare('DELETE FROM outbox_events WHERE session_id = ? AND sequence <= ?')
+        .run(sessionId, sequence);
       this.db
         .prepare('UPDATE outbox_sessions SET last_acked = MAX(last_acked, ?) WHERE session_id = ?')
         .run(sequence, sessionId);
@@ -146,13 +182,19 @@ export class SqliteOutboxStore implements OutboxStore {
 
   markFailed(sessionId: string, reason: string): void {
     this.sessionRow(sessionId);
-    this.db.prepare('UPDATE outbox_sessions SET failure = ? WHERE session_id = ?').run(reason, sessionId);
+    this.db
+      .prepare('UPDATE outbox_sessions SET failure = ? WHERE session_id = ?')
+      .run(reason, sessionId);
   }
 
   stats(sessionId: string): OutboxStats {
     const s = this.sessionRow(sessionId);
-    const pending = this.db.prepare('SELECT COUNT(*) AS n FROM outbox_events WHERE session_id = ?').get(sessionId) as { n: number };
-    const batches = this.db.prepare('SELECT COUNT(*) AS n FROM outbox_batches WHERE session_id = ?').get(sessionId) as { n: number };
+    const pending = this.db
+      .prepare('SELECT COUNT(*) AS n FROM outbox_events WHERE session_id = ?')
+      .get(sessionId) as { n: number };
+    const batches = this.db
+      .prepare('SELECT COUNT(*) AS n FROM outbox_batches WHERE session_id = ?')
+      .get(sessionId) as { n: number };
     return {
       pendingEvents: Number(pending.n),
       pendingBatches: Number(batches.n),
@@ -164,7 +206,11 @@ export class SqliteOutboxStore implements OutboxStore {
 
   /** Sessions that still have events to upload (resume after restart). */
   pendingSessions(): string[] {
-    return (this.db.prepare('SELECT DISTINCT session_id FROM outbox_events').all() as Array<{ session_id: string }>).map((r) => r.session_id);
+    return (
+      this.db.prepare('SELECT DISTINCT session_id FROM outbox_events').all() as Array<{
+        session_id: string;
+      }>
+    ).map((r) => r.session_id);
   }
 
   /** Removes everything about a session once the server confirmed completion. */

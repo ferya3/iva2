@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "os": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "os_version": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "app_version": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "engine_version": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "cpu_model": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cpu_cores": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "memory_gb": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "screen": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "scale_factor": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "color_depth": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "scale_factor",
+        "color_depth"
+      ],
+      "additionalProperties": false
+    },
+    "gpu": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "audio_output": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "os",
+    "os_version",
+    "app_version",
+    "engine_version",
+    "cpu_model",
+    "cpu_cores",
+    "memory_gb",
+    "screen",
+    "gpu",
+    "audio_output"
+  ],
+  "additionalProperties": false
+}

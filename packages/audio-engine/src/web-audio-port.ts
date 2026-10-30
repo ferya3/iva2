@@ -9,7 +9,15 @@ import {
 
 type Ctx = Pick<
   AudioContext,
-  'currentTime' | 'sampleRate' | 'baseLatency' | 'destination' | 'createBuffer' | 'createBufferSource' | 'resume' | 'close' | 'state'
+  | 'currentTime'
+  | 'sampleRate'
+  | 'baseLatency'
+  | 'destination'
+  | 'createBuffer'
+  | 'createBufferSource'
+  | 'resume'
+  | 'close'
+  | 'state'
 > & {
   outputLatency?: number;
   getOutputTimestamp?: () => AudioTimestamp;
@@ -59,11 +67,18 @@ export class WebAudioPort implements AudioPort {
 
   private clockPair(): ClockPair {
     const ts = this.o.context.getOutputTimestamp?.();
-    if (ts?.contextTime !== undefined && ts.performanceTime !== undefined && ts.performanceTime > 0) {
+    if (
+      ts?.contextTime !== undefined &&
+      ts.performanceTime !== undefined &&
+      ts.performanceTime > 0
+    ) {
       return { contextTime: ts.contextTime, performanceTime: ts.performanceTime };
     }
     // Fallback: assume currentTime corresponds to "now".
-    return { contextTime: this.o.context.currentTime, performanceTime: this.o.clock.now() + this.o.clock.origin };
+    return {
+      contextTime: this.o.context.currentTime,
+      performanceTime: this.o.clock.now() + this.o.clock.origin,
+    };
   }
 
   schedule(stimulusId: string, at: number): number {
@@ -96,7 +111,8 @@ export class WebAudioPort implements AudioPort {
 
   private async buildBuffer(spec: AuditoryStimulusSpec): Promise<AudioBuffer> {
     if (spec.assetKey) {
-      if (!this.o.loadAsset || !this.o.decode) throw new Error('asset stimuli need loadAsset and decode');
+      if (!this.o.loadAsset || !this.o.decode)
+        throw new Error('asset stimuli need loadAsset and decode');
       return this.o.decode(await this.o.loadAsset(spec.assetKey));
     }
     const ctx = this.o.context;

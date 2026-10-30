@@ -16,7 +16,10 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
         </div>
         <Card>
           <CardBody className="p-6">
-            <LoginForm next={typeof params.next === 'string' ? params.next : undefined} expired={params.expired === '1'} />
+            <LoginForm
+              next={typeof params.next === 'string' ? params.next : undefined}
+              expired={params.expired === '1'}
+            />
           </CardBody>
         </Card>
       </div>

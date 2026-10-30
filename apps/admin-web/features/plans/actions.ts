@@ -13,7 +13,10 @@ export async function updatePlan(id: number, _: FormState, form: FormData): Prom
         name: form.get('name'),
         // Entered in Toman for convenience, stored in Rial.
         price_irr: Math.round(Number(form.get('price_toman') ?? 0) * 10),
-        limits: { clinicians: intOrNull(form.get('clinicians')), sessions_per_month: intOrNull(form.get('sessions_per_month')) },
+        limits: {
+          clinicians: intOrNull(form.get('clinicians')),
+          sessions_per_month: intOrNull(form.get('sessions_per_month')),
+        },
         is_active: form.get('is_active') === 'on',
       },
     });

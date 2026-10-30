@@ -13,7 +13,11 @@ class FakeSource {
   stop() {}
 }
 
-function fakeContext(opts: { currentTime: number; outputLatency: number; pair: { contextTime: number; performanceTime: number } }) {
+function fakeContext(opts: {
+  currentTime: number;
+  outputLatency: number;
+  pair: { contextTime: number; performanceTime: number };
+}) {
   const sources: FakeSource[] = [];
   const ctx = {
     currentTime: opts.currentTime,
@@ -45,7 +49,9 @@ describe('synthesizeTone', () => {
   });
 
   it('rejects levels above full scale', () => {
-    expect(() => synthesizeTone({ frequencyHz: 1000, durationMs: 10, levelDb: 3 }, 48000)).toThrow();
+    expect(() =>
+      synthesizeTone({ frequencyHz: 1000, durationMs: 10, levelDb: 3 }, 48000),
+    ).toThrow();
   });
 });
 
@@ -59,7 +65,9 @@ describe('WebAudioPort scheduling', () => {
       pair: { contextTime: 2, performanceTime: 10_000 },
     });
     const port = new WebAudioPort({ context: ctx, clock });
-    await port.prepare({ tone: { modality: 'auditory', frequencyHz: 500, durationMs: 50, levelDb: -10 } });
+    await port.prepare({
+      tone: { modality: 'auditory', frequencyHz: 500, durationMs: 50, levelDb: -10 },
+    });
 
     const planned = 1_100; // session ms → performance 10_100 → context 2.1 s
     const actual = port.schedule('tone', planned);
@@ -69,9 +77,15 @@ describe('WebAudioPort scheduling', () => {
 
   it('reports a late onset when the planned time has passed', async () => {
     const clock = new OffsetClock(new ManualClock(10_000), 9_000);
-    const { ctx } = fakeContext({ currentTime: 2.5, outputLatency: 0, pair: { contextTime: 2, performanceTime: 10_000 } });
+    const { ctx } = fakeContext({
+      currentTime: 2.5,
+      outputLatency: 0,
+      pair: { contextTime: 2, performanceTime: 10_000 },
+    });
     const port = new WebAudioPort({ context: ctx, clock });
-    await port.prepare({ tone: { modality: 'auditory', frequencyHz: 500, durationMs: 50, levelDb: -10 } });
+    await port.prepare({
+      tone: { modality: 'auditory', frequencyHz: 500, durationMs: 50, levelDb: -10 },
+    });
     expect(port.schedule('tone', 1_100)).toBeGreaterThan(1_100);
   });
 });

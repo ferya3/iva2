@@ -37,7 +37,8 @@ describe('EventRecorder', () => {
 
   it('can resume numbering after a crash', () => {
     const store = new MemoryOutboxStore();
-    for (let i = 1; i <= 3; i++) store.append('s', { sequence: i, type: 'marker', timestamp_ms: i, label: 'x' });
+    for (let i = 1; i <= 3; i++)
+      store.append('s', { sequence: i, type: 'marker', timestamp_ms: i, label: 'x' });
     const recorder = new EventRecorder({
       clock: new ManualClock(10),
       sinks: [new OutboxSink(store, 's')],

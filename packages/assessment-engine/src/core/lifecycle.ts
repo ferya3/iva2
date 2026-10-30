@@ -1,6 +1,7 @@
 import { StateMachine } from './state-machine';
 
-export type EngineState = 'idle' | 'preparing' | 'ready' | 'running' | 'completed' | 'aborted' | 'failed';
+export type EngineState =
+  'idle' | 'preparing' | 'ready' | 'running' | 'completed' | 'aborted' | 'failed';
 
 export const ENGINE_TRANSITIONS: Readonly<Record<EngineState, readonly EngineState[]>> = {
   idle: ['preparing'],

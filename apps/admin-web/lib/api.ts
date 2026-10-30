@@ -19,10 +19,18 @@ export class ApiRequestError extends Error {
 }
 
 /** Server-side client for the platform admin API (/admin/*). */
-export async function api<T>(path: string, init: { method?: string; body?: unknown; query?: Record<string, string | number | undefined> } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  init: {
+    method?: string;
+    body?: unknown;
+    query?: Record<string, string | number | undefined>;
+  } = {},
+): Promise<T> {
   const token = (await cookies()).get(TOKEN_COOKIE)?.value;
   const url = new URL(API_URL + path);
-  for (const [k, v] of Object.entries(init.query ?? {})) if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
+  for (const [k, v] of Object.entries(init.query ?? {}))
+    if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
   const res = await fetch(url, {
     method: init.method ?? 'GET',
     headers: {
@@ -41,7 +49,11 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
 
 export function toFormError(e: unknown): FormState {
   if (e instanceof ApiRequestError) {
-    return { ok: false, message: e.status === 422 ? 'اطلاعات وارد شده را بررسی کنید.' : e.body.message, errors: e.body.errors };
+    return {
+      ok: false,
+      message: e.status === 422 ? 'اطلاعات وارد شده را بررسی کنید.' : e.body.message,
+      errors: e.body.errors,
+    };
   }
   throw e;
 }

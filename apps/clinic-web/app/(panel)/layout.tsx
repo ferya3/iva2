@@ -14,7 +14,9 @@ export default async function PanelLayout({ children }: { children: ReactNode })
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-e border-slate-200 bg-white lg:flex">
         <div className="border-b border-slate-100 px-5 py-4">
           <Logo />
-          <p className="mt-3 truncate text-sm font-medium text-slate-800">{membership.tenant_name}</p>
+          <p className="mt-3 truncate text-sm font-medium text-slate-800">
+            {membership.tenant_name}
+          </p>
           {memberships.length > 1 ? (
             <Link href="/select-clinic" className="text-xs text-brand-700 hover:underline">
               تغییر کلینیک

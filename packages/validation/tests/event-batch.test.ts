@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { EVENT_BATCH_LIMITS, eventBatchSchema } from '../src';
 
 const fixture = () =>
-  JSON.parse(readFileSync(resolve(import.meta.dirname, '../fixtures/event-batch.valid.json'), 'utf8'));
+  JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../fixtures/event-batch.valid.json'), 'utf8'),
+  );
 
 describe('event batch contract', () => {
   it('accepts the canonical fixture (shared with the API test-suite)', () => {
@@ -33,8 +35,15 @@ describe('event batch contract', () => {
 
   it('enforces the batch size limit', () => {
     const batch = fixture();
-    const marker = (sequence: number) => ({ sequence, type: 'marker', timestamp_ms: 2000, label: 'x' });
-    batch.events = Array.from({ length: EVENT_BATCH_LIMITS.maxEvents + 1 }, (_, i) => marker(i + 1));
+    const marker = (sequence: number) => ({
+      sequence,
+      type: 'marker',
+      timestamp_ms: 2000,
+      label: 'x',
+    });
+    batch.events = Array.from({ length: EVENT_BATCH_LIMITS.maxEvents + 1 }, (_, i) =>
+      marker(i + 1),
+    );
     expect(eventBatchSchema.safeParse(batch).success).toBe(false);
   });
 

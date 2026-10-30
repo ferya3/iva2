@@ -1,4 +1,10 @@
-import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type {
+  InputHTMLAttributes,
+  LabelHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
 import { cn } from '../cn';
 
 const field =
@@ -17,7 +23,12 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
 }
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn('mb-1.5 block text-sm font-medium text-slate-700', className)} {...props} />;
+  return (
+    <label
+      className={cn('mb-1.5 block text-sm font-medium text-slate-700', className)}
+      {...props}
+    />
+  );
 }
 
 export function Field({

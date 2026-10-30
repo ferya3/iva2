@@ -13,7 +13,10 @@ export async function measureDisplayTiming(durationMs = 3000) {
 }
 
 /** Collects `count` Space presses and their dispatch latency. */
-export function collectKeyPresses(count: number, onPress: (n: number) => void): Promise<InputSample[]> {
+export function collectKeyPresses(
+  count: number,
+  onPress: (n: number) => void,
+): Promise<InputSample[]> {
   return new Promise((resolve) => {
     const samples: InputSample[] = [];
     const handler = (e: KeyboardEvent) => {
@@ -31,7 +34,10 @@ export function collectKeyPresses(count: number, onPress: (n: number) => void): 
 }
 
 /** Plays a short reference tone and reports the audio stack's latencies. */
-export async function probeAudio(): Promise<{ ctx: AudioContext | null; info: ReturnType<typeof describeAudioContext> }> {
+export async function probeAudio(): Promise<{
+  ctx: AudioContext | null;
+  info: ReturnType<typeof describeAudioContext>;
+}> {
   try {
     const ctx = new AudioContext({ latencyHint: 'interactive' });
     await ctx.resume();
@@ -61,7 +67,14 @@ export function evaluate(
 ): CalibrationResult {
   const result = evaluateCalibration(display, analyzeInputLatency(input), audio, thresholds);
   if (thresholds.requireAudio && !heard) {
-    return { ...result, verdict: 'fail', reasons: [{ code: 'audio.not_heard', message: 'participant did not hear the reference tone' }, ...result.reasons] };
+    return {
+      ...result,
+      verdict: 'fail',
+      reasons: [
+        { code: 'audio.not_heard', message: 'participant did not hear the reference tone' },
+        ...result.reasons,
+      ],
+    };
   }
   return result;
 }

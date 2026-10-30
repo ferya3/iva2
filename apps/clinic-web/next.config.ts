@@ -1,7 +1,10 @@
+import { resolve } from 'node:path';
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   output: 'standalone',
+  // Trace workspace packages from the monorepo root into the standalone build.
+  outputFileTracingRoot: resolve(import.meta.dirname, '../..'),
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['@cognitest/ui', '@cognitest/shared-types', '@cognitest/report-schema'],

@@ -1,5 +1,13 @@
 import { SESSION_STATUS_META, type SessionStatus } from '@cognitest/shared-types';
-import { Card, CardBody, CardHeader, PageHeader, SessionStatusBadge, StatCard, faNumber } from '@cognitest/ui';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  PageHeader,
+  SessionStatusBadge,
+  StatCard,
+  faNumber,
+} from '@cognitest/ui';
 import { api } from '@/lib/api';
 import { SessionsPerDayChart } from '@/components/stats-chart';
 
@@ -21,7 +29,11 @@ export default async function OverviewPage() {
     <>
       <PageHeader title="نمای کلی سامانه" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="کلینیک‌ها" value={faNumber(s.tenants)} hint={`${faNumber(s.active_tenants)} فعال`} />
+        <StatCard
+          label="کلینیک‌ها"
+          value={faNumber(s.tenants)}
+          hint={`${faNumber(s.active_tenants)} فعال`}
+        />
         <StatCard label="اشتراک‌های فعال" value={faNumber(s.active_subscriptions)} />
         <StatCard label="کاربران" value={faNumber(s.users)} />
         <StatCard label="کل جلسات آزمون" value={faNumber(s.sessions)} />
@@ -40,7 +52,9 @@ export default async function OverviewPage() {
               {(Object.keys(SESSION_STATUS_META) as SessionStatus[]).map((status) => (
                 <li key={status} className="flex items-center justify-between text-sm">
                   <SessionStatusBadge status={status} />
-                  <span className="tabular-nums">{faNumber(s.sessions_by_status[status] ?? 0)}</span>
+                  <span className="tabular-nums">
+                    {faNumber(s.sessions_by_status[status] ?? 0)}
+                  </span>
                 </li>
               ))}
             </ul>

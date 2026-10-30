@@ -7,7 +7,10 @@ import { ClinicForm, type Clinic } from '@/features/settings/clinic-form';
 export const metadata: Metadata = { title: 'تنظیمات کلینیک' };
 
 export default async function SettingsPage() {
-  const [{ data: clinic }, editable] = await Promise.all([api<{ data: Clinic }>('/tenant'), can('tenant.manage')]);
+  const [{ data: clinic }, editable] = await Promise.all([
+    api<{ data: Clinic }>('/tenant'),
+    can('tenant.manage'),
+  ]);
   return (
     <>
       <PageHeader title="تنظیمات کلینیک" />

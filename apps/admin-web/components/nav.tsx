@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpenCheck, Building2, CreditCard, LayoutDashboard, ScrollText, UserCog } from 'lucide-react';
+import {
+  BookOpenCheck,
+  Building2,
+  CreditCard,
+  LayoutDashboard,
+  ScrollText,
+  UserCog,
+} from 'lucide-react';
 import { cn } from '@cognitest/ui';
 
 const NAV = [
@@ -24,7 +31,12 @@ export function Nav() {
           <Link
             key={item.href}
             href={item.href}
-            className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm', active ? 'bg-white/10 font-semibold text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white')}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm',
+              active
+                ? 'bg-white/10 font-semibold text-white'
+                : 'text-slate-300 hover:bg-white/5 hover:text-white',
+            )}
           >
             <item.icon className="h-[18px] w-[18px]" />
             {item.label}

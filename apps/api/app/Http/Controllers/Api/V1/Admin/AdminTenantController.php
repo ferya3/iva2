@@ -20,7 +20,7 @@ class AdminTenantController extends Controller
         return TenantResource::collection(
             Tenant::query()
                 ->withCount('members')
-                ->when($request->input('q'), fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%")->orWhere('slug', 'ilike', "%{$s}%"))
+                ->when($request->input('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('name', 'ilike', "%{$s}%")->orWhere('slug', 'ilike', "%{$s}%")))
                 ->when($request->input('status'), fn ($q, $s) => $q->where('status', $s))
                 ->latest()
                 ->paginate(25)

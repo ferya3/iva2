@@ -43,7 +43,8 @@ export interface InputSource {
   subscribe(handler: (input: RawInput) => void): () => void;
 }
 
-export type EnvironmentSignal = 'focus_lost' | 'focus_gained' | 'visibility_hidden' | 'visibility_visible';
+export type EnvironmentSignal =
+  'focus_lost' | 'focus_gained' | 'visibility_hidden' | 'visibility_visible';
 
 export interface EnvironmentSource {
   subscribe(handler: (signal: EnvironmentSignal) => void): () => void;

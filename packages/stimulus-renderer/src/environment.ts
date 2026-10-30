@@ -8,7 +8,8 @@ export class DocumentEnvironment implements EnvironmentSource {
   ) {}
 
   subscribe(handler: (signal: EnvironmentSignal) => void): () => void {
-    const onVisibility = () => handler(this.doc.hidden ? 'visibility_hidden' : 'visibility_visible');
+    const onVisibility = () =>
+      handler(this.doc.hidden ? 'visibility_hidden' : 'visibility_visible');
     const onBlur = () => handler('focus_lost');
     const onFocus = () => handler('focus_gained');
     this.doc.addEventListener('visibilitychange', onVisibility);

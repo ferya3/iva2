@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { EventBatch } from '@cognitest/shared-types';
-import { MemoryOutboxStore, SyncWorker, backoffDelay, type BatchTransport, type TransportResult } from '../src';
+import {
+  MemoryOutboxStore,
+  SyncWorker,
+  backoffDelay,
+  type BatchTransport,
+  type TransportResult,
+} from '../src';
 import { marker } from '../src/testing';
 
 const SID = '0b5c1b9e-6c1e-4b7a-9b52-6a3e1f2d9c11';
@@ -19,14 +25,26 @@ class FakeServer implements BatchTransport {
     if (injected) return injected;
     const known = this.seenBatches.get(batch.batch_id);
     if (known !== undefined) {
-      return { kind: 'acked', ack: { batch_id: batch.batch_id, accepted: 0, duplicate: true, last_sequence: known } };
+      return {
+        kind: 'acked',
+        ack: { batch_id: batch.batch_id, accepted: 0, duplicate: true, last_sequence: known },
+      };
     }
     const expected = (this.stored.at(-1) ?? 0) + 1;
-    if (batch.events[0]!.sequence !== expected) return { kind: 'sequence_conflict', expectedSequence: expected };
+    if (batch.events[0]!.sequence !== expected)
+      return { kind: 'sequence_conflict', expectedSequence: expected };
     for (const e of batch.events) this.stored.push(e.sequence);
     const last = batch.events.at(-1)!.sequence;
     this.seenBatches.set(batch.batch_id, last);
-    return { kind: 'acked', ack: { batch_id: batch.batch_id, accepted: batch.events.length, duplicate: false, last_sequence: last } };
+    return {
+      kind: 'acked',
+      ack: {
+        batch_id: batch.batch_id,
+        accepted: batch.events.length,
+        duplicate: false,
+        last_sequence: last,
+      },
+    };
   }
 }
 
@@ -69,7 +87,12 @@ describe('SyncWorker', () => {
     const { store, server, worker } = setup(3);
     const batch = store.nextBatch(SID, 4)!;
     // Server stores the batch but the response never reaches the client.
-    await server.send({ session_id: SID, batch_id: batch.batchId, engine_version: '1.0.0', events: batch.events });
+    await server.send({
+      session_id: SID,
+      batch_id: batch.batchId,
+      engine_version: '1.0.0',
+      events: batch.events,
+    });
     await worker.flush();
     expect(server.stored).toEqual([1, 2, 3]);
     expect(store.stats(SID).lastAckedSequence).toBe(3);

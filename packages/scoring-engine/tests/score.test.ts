@@ -43,7 +43,11 @@ describe('scoreSession (engine → scoring integration)', () => {
   it('excludes practice and reports per modality and per block', async () => {
     const r = scoreSession(await simulate());
     expect(r.metrics.some((m) => m.scope === 'block:practice')).toBe(false);
-    expect(['main-1', 'main-2', 'main-3', 'main-4'].every((b) => metric(r, 'trials', `block:${b}`) === 50)).toBe(true);
+    expect(
+      ['main-1', 'main-2', 'main-3', 'main-4'].every(
+        (b) => metric(r, 'trials', `block:${b}`) === 50,
+      ),
+    ).toBe(true);
     expect(metric(r, 'trials', 'visual')! + metric(r, 'trials', 'auditory')!).toBe(200);
   });
 
@@ -67,7 +71,9 @@ describe('quality control', () => {
     const events = await base();
     const last = events.at(-1)! as Extract<SessionEvent, { type: 'session_ended' }>;
     const r = scoreSession([...events.slice(0, -1), { ...last, reason: 'aborted' }]);
-    expect(r.quality_flags).toContainEqual(expect.objectContaining({ code: 'run.aborted', severity: 'critical' }));
+    expect(r.quality_flags).toContainEqual(
+      expect.objectContaining({ code: 'run.aborted', severity: 'critical' }),
+    );
   });
 
   it('flags but does not invalidate a single short interruption', async () => {
@@ -87,7 +93,11 @@ describe('quality control', () => {
   });
 
   it('accepts custom thresholds from the protocol validation rules', async () => {
-    const r = scoreSession(await base(), { quality: { omissionRate: { warn: 0.1, critical: 0.15 } } as never });
-    expect(r.quality_flags.find((f) => f.code === 'engagement.omissions')?.severity).toBe('critical');
+    const r = scoreSession(await base(), {
+      quality: { omissionRate: { warn: 0.1, critical: 0.15 } } as never,
+    });
+    expect(r.quality_flags.find((f) => f.code === 'engagement.omissions')?.severity).toBe(
+      'critical',
+    );
   });
 });

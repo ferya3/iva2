@@ -7,7 +7,12 @@ import {
   type EngineHooks,
   type ProtocolDefinition,
 } from '../src';
-import { ScriptedEnvironment, ScriptedInput, VirtualDisplay, flushMicrotasks } from '../src/testing';
+import {
+  ScriptedEnvironment,
+  ScriptedInput,
+  VirtualDisplay,
+  flushMicrotasks,
+} from '../src/testing';
 
 export const SMALL_PROTOCOL: ProtocolDefinition = {
   key: 'test',
@@ -44,7 +49,10 @@ export const SMALL_PROTOCOL: ProtocolDefinition = {
   ],
 };
 
-export const withModalities = (modalities: Array<'visual' | 'auditory'>, trials = 20): ProtocolDefinition => ({
+export const withModalities = (
+  modalities: Array<'visual' | 'auditory'>,
+  trials = 20,
+): ProtocolDefinition => ({
   ...SMALL_PROTOCOL,
   blocks: [
     {
@@ -70,13 +78,22 @@ export interface Harness {
 
 export function createHarness(
   protocol: ProtocolDefinition = SMALL_PROTOCOL,
-  opts: { seed?: number; hz?: number; audioLatency?: number; hooks?: EngineHooks; sinks?: EventSink[] } = {},
+  opts: {
+    seed?: number;
+    hz?: number;
+    audioLatency?: number;
+    hooks?: EngineHooks;
+    sinks?: EventSink[];
+  } = {},
 ): Harness {
   const display = new VirtualDisplay(opts.hz ?? 60);
   const input = new ScriptedInput();
   const env = new ScriptedEnvironment();
   const sink = new MemorySink();
-  const recorder = new EventRecorder({ clock: display.session, sinks: [sink, ...(opts.sinks ?? [])] });
+  const recorder = new EventRecorder({
+    clock: display.session,
+    sinks: [sink, ...(opts.sinks ?? [])],
+  });
   const visual = new HeadlessVisualPort();
   const audio = new HeadlessAudioPort(opts.audioLatency ?? 0);
   const engine = new AssessmentEngine({

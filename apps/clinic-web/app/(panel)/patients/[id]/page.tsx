@@ -1,6 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Card, CardBody, CardHeader, EmptyState, PageHeader, SessionStatusBadge, Table, Td, Th, ValidityBadge, buttonVariants, faDate } from '@cognitest/ui';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+  SessionStatusBadge,
+  Table,
+  Td,
+  Th,
+  ValidityBadge,
+  buttonVariants,
+  faDate,
+} from '@cognitest/ui';
 import { api } from '@/lib/api';
 import type { Paginated, Patient, Session } from '@/lib/types';
 import { PatientForm } from '@/features/patients/patient-form';
@@ -21,7 +34,11 @@ export default async function PatientPage({ params }: PageProps<'/patients/[id]'
       <PageHeader
         title={name || patient.patient_code}
         description={<span className="ltr">{patient.patient_code}</span>}
-        actions={<Link href={`/sessions/new?patient=${patient.id}`} className={buttonVariants()}>آزمون جدید برای این مراجعه‌کننده</Link>}
+        actions={
+          <Link href={`/sessions/new?patient=${patient.id}`} className={buttonVariants()}>
+            آزمون جدید برای این مراجعه‌کننده
+          </Link>
+        }
       />
       <div className="grid gap-6 xl:grid-cols-5">
         <Card className="xl:col-span-3">
@@ -43,11 +60,16 @@ export default async function PatientPage({ params }: PageProps<'/patients/[id]'
                   <tr key={s.id} className="hover:bg-slate-50">
                     <Td>
                       <Link href={`/sessions/${s.id}`} className="text-brand-700 hover:underline">
-                        {s.assessment?.name ?? 'آزمون'} <span className="ltr text-xs text-slate-500">v{s.assessment?.version}</span>
+                        {s.assessment?.name ?? 'آزمون'}{' '}
+                        <span className="ltr text-xs text-slate-500">v{s.assessment?.version}</span>
                       </Link>
                     </Td>
-                    <Td><SessionStatusBadge status={s.status} /></Td>
-                    <Td><ValidityBadge status={s.validity_status} /></Td>
+                    <Td>
+                      <SessionStatusBadge status={s.status} />
+                    </Td>
+                    <Td>
+                      <ValidityBadge status={s.validity_status} />
+                    </Td>
                     <Td>{faDate(s.created_at)}</Td>
                   </tr>
                 ))}

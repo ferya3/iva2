@@ -4,3 +4,9 @@ pnpm-lock.yaml
 **/dist
 **/out
 **/coverage
+**/out
+**/release
+**/fixtures/*.json
+docs/api/schemas
+**/.next
+**/next-env.d.ts

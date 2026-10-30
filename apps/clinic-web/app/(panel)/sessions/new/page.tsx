@@ -16,15 +16,26 @@ export default async function NewSessionPage({ searchParams }: PageProps<'/sessi
 
   return (
     <>
-      <PageHeader title="آزمون جدید" description="جلسه آزمون بسازید و کد ورود برنامه دسکتاپ را صادر کنید." />
+      <PageHeader
+        title="آزمون جدید"
+        description="جلسه آزمون بسازید و کد ورود برنامه دسکتاپ را صادر کنید."
+      />
       <Card className="max-w-2xl">
         <CardBody>
           {patients.data.length === 0 ? (
             <Alert tone="info">
-              ابتدا یک مراجعه‌کننده <Link href="/patients/new" className="font-semibold underline">ثبت کنید</Link>.
+              ابتدا یک مراجعه‌کننده{' '}
+              <Link href="/patients/new" className="font-semibold underline">
+                ثبت کنید
+              </Link>
+              .
             </Alert>
           ) : (
-            <SessionForm patients={patients.data} types={types.data} patientId={typeof patient === 'string' ? patient : undefined} />
+            <SessionForm
+              patients={patients.data}
+              types={types.data}
+              patientId={typeof patient === 'string' ? patient : undefined}
+            />
           )}
         </CardBody>
       </Card>

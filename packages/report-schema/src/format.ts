@@ -4,7 +4,11 @@ const faDigits = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 });
 const faPercent = new Intl.NumberFormat('fa-IR', { style: 'percent', maximumFractionDigits: 1 });
 
 /** Formats a metric value for display in Persian (Eastern Arabic digits). */
-export function formatMetric(value: number | null, unit: string | null, locale: 'fa' | 'en' = 'fa'): string {
+export function formatMetric(
+  value: number | null,
+  unit: string | null,
+  locale: 'fa' | 'en' = 'fa',
+): string {
   if (value === null) return '—';
   if (locale === 'en') {
     if (unit === 'ratio') return `${(value * 100).toFixed(1)}%`;
@@ -16,7 +20,10 @@ export function formatMetric(value: number | null, unit: string | null, locale: 
   return faDigits.format(value);
 }
 
-export const VALIDITY_LABELS: Record<ValidityStatus, { fa: string; en: string; tone: 'ok' | 'warn' | 'bad' }> = {
+export const VALIDITY_LABELS: Record<
+  ValidityStatus,
+  { fa: string; en: string; tone: 'ok' | 'warn' | 'bad' }
+> = {
   valid: { fa: 'معتبر', en: 'Valid', tone: 'ok' },
   questionable: { fa: 'نیازمند بررسی', en: 'Questionable', tone: 'warn' },
   invalid: { fa: 'نامعتبر', en: 'Invalid', tone: 'bad' },

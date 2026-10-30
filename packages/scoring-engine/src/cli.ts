@@ -25,7 +25,9 @@ async function main(): Promise<void> {
   try {
     parsed = inputSchema.parse(JSON.parse(await readStdin()));
   } catch (error) {
-    process.stderr.write(`invalid input: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.stderr.write(
+      `invalid input: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
     process.exit(2);
   }
   const result = scoreSession(parsed.events as SessionEvent[], parsed.config);

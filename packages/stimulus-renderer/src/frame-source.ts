@@ -4,7 +4,9 @@ import type { FrameSource } from '@cognitest/assessment-engine';
 export class AnimationFrameSource implements FrameSource {
   private handle: number | null = null;
 
-  constructor(private readonly win: Pick<Window, 'requestAnimationFrame' | 'cancelAnimationFrame'> = window) {}
+  constructor(
+    private readonly win: Pick<Window, 'requestAnimationFrame' | 'cancelAnimationFrame'> = window,
+  ) {}
 
   request(callback: (t: number) => void): void {
     this.handle = this.win.requestAnimationFrame((t) => {

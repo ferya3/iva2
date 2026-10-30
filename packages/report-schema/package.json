@@ -12,5 +12,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": {"@cognitest/shared-types": "workspace:*", "zod": "4.6.7"}
+  "dependencies": {
+    "@cognitest/shared-types": "workspace:*",
+    "zod": "4.6.7"
+  }
 }

@@ -13,7 +13,8 @@ use Illuminate\Validation\ValidationException;
  */
 final class EventBatchValidator
 {
-    private const UUID = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
+    // Same as zod's z.uuid(): RFC 9562 layout, versions 1–8.
+    private const UUID = '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     private const SEMVER = '/^\d+\.\d+\.\d+(?:[-+][\w.]+)?$/';
 

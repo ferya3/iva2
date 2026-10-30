@@ -1,4 +1,12 @@
-import { IntervalTracker, intervals, median, quantile, round, standardDeviation, mean } from '@cognitest/timing-core';
+import {
+  IntervalTracker,
+  intervals,
+  median,
+  quantile,
+  round,
+  standardDeviation,
+  mean,
+} from '@cognitest/timing-core';
 
 export interface DisplayMeasurement {
   samples: number;
@@ -16,7 +24,8 @@ export function nominalRefreshRate(measuredHz: number, tolerance = 0.03): number
   let best: number | null = null;
   for (const rate of NOMINAL_REFRESH_RATES) {
     const err = Math.abs(measuredHz - rate) / rate;
-    if (err <= tolerance && (best === null || err < Math.abs(measuredHz - best) / best)) best = rate;
+    if (err <= tolerance && (best === null || err < Math.abs(measuredHz - best) / best))
+      best = rate;
   }
   return best;
 }
@@ -45,7 +54,10 @@ export function analyzeFrameTimestamps(timestamps: readonly number[]): DisplayMe
 export type RequestFrame = (callback: (timestamp: number) => void) => unknown;
 
 /** Samples rAF for `durationMs` and analyses the result. */
-export function measureDisplay(requestFrame: RequestFrame, durationMs = 2_000): Promise<DisplayMeasurement> {
+export function measureDisplay(
+  requestFrame: RequestFrame,
+  durationMs = 2_000,
+): Promise<DisplayMeasurement> {
   return new Promise((resolve, reject) => {
     const stamps: number[] = [];
     const tick = (t: number) => {

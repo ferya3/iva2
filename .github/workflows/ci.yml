@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  typescript:
+    name: TypeScript packages & apps
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm turbo run typecheck test
+      - run: pnpm turbo run build --filter=@cognitest/clinic-web --filter=@cognitest/admin-web --filter=@cognitest/desktop-player --filter=@cognitest/scoring-engine
+
+  api:
+    name: Laravel API (PostgreSQL)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run: { working-directory: apps/api }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, redis, intl, pcntl
+          coverage: none
+          ini-values: precision=-1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - name: Build scoring CLI used by the API
+        working-directory: .
+        run: pnpm install --frozen-lockfile --filter @cognitest/scoring-engine... && pnpm --filter @cognitest/scoring-engine build
+      - name: Database roles
+        env: { PGPASSWORD: postgres }
+        run: |
+          psql -h localhost -U postgres -c "CREATE ROLE cognitest LOGIN PASSWORD 'secret' CREATEDB"
+          psql -h localhost -U postgres -c "CREATE ROLE cognitest_app LOGIN PASSWORD 'secret'"
+          psql -h localhost -U postgres -c "GRANT cognitest_app TO cognitest"
+          psql -h localhost -U postgres -c "CREATE DATABASE cognitest_test OWNER cognitest"
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: vendor/bin/pint --test
+      - run: php artisan test
+
+  player-windows:
+    name: Desktop player installer (Windows)
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    runs-on: windows-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cognitest/desktop-player test
+      - run: pnpm --filter @cognitest/desktop-player dist:win
+        env:
+          MAIN_VITE_API_URL: ${{ vars.PLAYER_API_URL }}
+          CSC_LINK: ${{ secrets.WINDOWS_CERT }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cognitest-player-windows
+          path: apps/desktop-player/release/*.exe

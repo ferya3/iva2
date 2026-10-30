@@ -9,7 +9,8 @@ describe('event stream integrity', () => {
     await runToEnd(h, (s) => (s.is_target ? 350 : null));
     const ev = h.sink.events;
     ev.forEach((e, i) => expect(e.sequence).toBe(i + 1));
-    for (let i = 1; i < ev.length; i++) expect(ev[i]!.timestamp_ms).toBeGreaterThanOrEqual(ev[i - 1]!.timestamp_ms);
+    for (let i = 1; i < ev.length; i++)
+      expect(ev[i]!.timestamp_ms).toBeGreaterThanOrEqual(ev[i - 1]!.timestamp_ms);
     expect(ev[0]!.type).toBe('session_started');
     expect(ev[1]!.type).toBe('block_started');
     expect(ev.at(-2)!.type).toBe('block_ended');

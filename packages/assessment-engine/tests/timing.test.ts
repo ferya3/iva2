@@ -9,7 +9,9 @@ describe('visual presentation timing', () => {
     expect(shown).toHaveLength(20);
     for (const s of shown) {
       expect(s.presentation_status).toBe('on_time');
-      expect(Math.abs(s.actual_time_ms - s.planned_time_ms)).toBeLessThanOrEqual(1000 / 60 / 2 + 0.5);
+      expect(Math.abs(s.actual_time_ms - s.planned_time_ms)).toBeLessThanOrEqual(
+        1000 / 60 / 2 + 0.5,
+      );
     }
   });
 
@@ -31,7 +33,9 @@ describe('visual presentation timing', () => {
     const h = createHarness(undefined, { hz: 144 });
     await runToEnd(h);
     for (const s of ofType(h.sink.events, 'stimulus_presented')) {
-      expect(Math.abs(s.actual_time_ms - s.planned_time_ms)).toBeLessThanOrEqual(1000 / 144 / 2 + 0.5);
+      expect(Math.abs(s.actual_time_ms - s.planned_time_ms)).toBeLessThanOrEqual(
+        1000 / 144 / 2 + 0.5,
+      );
     }
   });
 
@@ -73,6 +77,8 @@ describe('audio scheduling', () => {
   it('flags late audio when the port reports extra latency', async () => {
     const h = createHarness(withModalities(['auditory']), { audioLatency: 8 });
     await runToEnd(h);
-    expect(ofType(h.sink.events, 'stimulus_presented').every((s) => s.presentation_status === 'late')).toBe(true);
+    expect(
+      ofType(h.sink.events, 'stimulus_presented').every((s) => s.presentation_status === 'late'),
+    ).toBe(true);
   });
 });

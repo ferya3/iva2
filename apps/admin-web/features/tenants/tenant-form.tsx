@@ -24,7 +24,11 @@ export function TenantForm({ plans }: { plans: Array<{ key: string; name: string
       </Field>
       <Field label="پلن" htmlFor="plan">
         <Select id="plan" name="plan" defaultValue="starter">
-          {plans.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+          {plans.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.name}
+            </option>
+          ))}
         </Select>
       </Field>
       <SubmitButton pendingText="در حال ایجاد…">ایجاد کلینیک</SubmitButton>

@@ -1,7 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { Card, EmptyState, Input, PageHeader, Table, Td, Th, buttonVariants, faDate, faNumber } from '@cognitest/ui';
+import {
+  Card,
+  EmptyState,
+  Input,
+  PageHeader,
+  Table,
+  Td,
+  Th,
+  buttonVariants,
+  faDate,
+  faNumber,
+} from '@cognitest/ui';
 import { api } from '@/lib/api';
 import type { Paginated, Patient } from '@/lib/types';
 import { Pagination } from '@/components/pagination';
@@ -18,12 +29,25 @@ export default async function PatientsPage({ searchParams }: PageProps<'/patient
 
   return (
     <>
-      <PageHeader title="مراجعه‌کنندگان" description="پرونده‌های ثبت‌شده در کلینیک" actions={<Link href="/patients/new" className={buttonVariants()}>ثبت مراجعه‌کننده</Link>} />
+      <PageHeader
+        title="مراجعه‌کنندگان"
+        description="پرونده‌های ثبت‌شده در کلینیک"
+        actions={
+          <Link href="/patients/new" className={buttonVariants()}>
+            ثبت مراجعه‌کننده
+          </Link>
+        }
+      />
       <Card>
         <form className="flex gap-2 border-b border-slate-100 p-4" role="search">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input name="q" defaultValue={q} placeholder="جستجو با نام، کد پرونده یا کد ملی" className="ps-9" />
+            <Input
+              name="q"
+              defaultValue={q}
+              placeholder="جستجو با نام، کد پرونده یا کد ملی"
+              className="ps-9"
+            />
           </div>
         </form>
         {res.data.length === 0 ? (
@@ -44,7 +68,12 @@ export default async function PatientsPage({ searchParams }: PageProps<'/patient
               {res.data.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <Td>
-                    <Link href={`/patients/${p.id}`} className="ltr font-medium text-brand-700 hover:underline">{p.patient_code}</Link>
+                    <Link
+                      href={`/patients/${p.id}`}
+                      className="ltr font-medium text-brand-700 hover:underline"
+                    >
+                      {p.patient_code}
+                    </Link>
                   </Td>
                   <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || '—'}</Td>
                   <Td>{faNumber(p.age_years)}</Td>

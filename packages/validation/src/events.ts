@@ -17,7 +17,11 @@ export const sessionStartedSchema = z.object({
   engine_version: shortText,
   protocol_key: shortText,
   protocol_version: shortText,
-  seed: z.number().int().min(0).max(2 ** 32 - 1),
+  seed: z
+    .number()
+    .int()
+    .min(0)
+    .max(2 ** 32 - 1),
   wall_clock_iso: z.iso.datetime({ offset: true }),
 });
 

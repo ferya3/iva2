@@ -8,6 +8,9 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DEMO_CPT_PROTOCOL } from '@cognitest/assessment-engine';
 
-const out = resolve(import.meta.dirname, '../apps/api/database/seeders/data/demo-cpt.protocol.json');
+const out = resolve(
+  import.meta.dirname,
+  '../apps/api/database/seeders/data/demo-cpt.protocol.json',
+);
 writeFileSync(out, JSON.stringify(DEMO_CPT_PROTOCOL, null, 2) + '\n');
 console.log(`wrote ${out}`);

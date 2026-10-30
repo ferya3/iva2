@@ -11,7 +11,9 @@ export function hardenApp(isAllowedUrl: (url: string) => boolean): void {
   app.enableSandbox();
 
   app.whenReady().then(() => {
-    session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) =>
+      callback(false),
+    );
     session.defaultSession.setPermissionCheckHandler(() => false);
   });
 

@@ -14,11 +14,13 @@ export async function GET(_: Request, { params }: RouteContext<'/api/reports/[id
     },
     cache: 'no-store',
   });
-  if (!upstream.ok || !upstream.body) return new Response('Report unavailable', { status: upstream.status });
+  if (!upstream.ok || !upstream.body)
+    return new Response('Report unavailable', { status: upstream.status });
   return new Response(upstream.body, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': upstream.headers.get('Content-Disposition') ?? 'attachment; filename="report.pdf"',
+      'Content-Disposition':
+        upstream.headers.get('Content-Disposition') ?? 'attachment; filename="report.pdf"',
       'Cache-Control': 'private, no-store',
     },
   });

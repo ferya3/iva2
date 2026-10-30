@@ -25,11 +25,29 @@ export function PatientForm({ action, patient }: { action: Action; patient?: Pat
         <Field label="نام خانوادگی" htmlFor="last_name" error={err('last_name')}>
           <Input id="last_name" name="last_name" defaultValue={patient?.last_name ?? ''} />
         </Field>
-        <Field label="کد ملی" htmlFor="national_id" error={err('national_id')} hint="به‌صورت رمزنگاری‌شده ذخیره می‌شود.">
-          <Input id="national_id" name="national_id" inputMode="numeric" dir="ltr" maxLength={10} defaultValue={patient?.national_id ?? ''} />
+        <Field
+          label="کد ملی"
+          htmlFor="national_id"
+          error={err('national_id')}
+          hint="به‌صورت رمزنگاری‌شده ذخیره می‌شود."
+        >
+          <Input
+            id="national_id"
+            name="national_id"
+            inputMode="numeric"
+            dir="ltr"
+            maxLength={10}
+            defaultValue={patient?.national_id ?? ''}
+          />
         </Field>
         <Field label="تاریخ تولد (میلادی)" htmlFor="birth_date" error={err('birth_date')}>
-          <Input id="birth_date" name="birth_date" type="date" dir="ltr" defaultValue={patient?.birth_date ?? ''} />
+          <Input
+            id="birth_date"
+            name="birth_date"
+            type="date"
+            dir="ltr"
+            defaultValue={patient?.birth_date ?? ''}
+          />
         </Field>
         <Field label="جنسیت" htmlFor="sex" error={err('sex')}>
           <Select id="sex" name="sex" defaultValue={patient?.sex ?? ''}>
@@ -59,17 +77,40 @@ export function PatientForm({ action, patient }: { action: Action; patient?: Pat
           </Select>
         </Field>
         <Field label="موبایل" htmlFor="phone" error={err('phone')}>
-          <Input id="phone" name="phone" inputMode="tel" dir="ltr" placeholder="09xxxxxxxxx" defaultValue={patient?.phone ?? ''} />
+          <Input
+            id="phone"
+            name="phone"
+            inputMode="tel"
+            dir="ltr"
+            placeholder="09xxxxxxxxx"
+            defaultValue={patient?.phone ?? ''}
+          />
         </Field>
-        <Field label="کد پرونده" htmlFor="patient_code" error={err('patient_code')} hint={isNew ? 'خالی بگذارید تا خودکار ساخته شود.' : undefined}>
-          <Input id="patient_code" name="patient_code" dir="ltr" defaultValue={patient?.patient_code ?? ''} />
+        <Field
+          label="کد پرونده"
+          htmlFor="patient_code"
+          error={err('patient_code')}
+          hint={isNew ? 'خالی بگذارید تا خودکار ساخته شود.' : undefined}
+        >
+          <Input
+            id="patient_code"
+            name="patient_code"
+            dir="ltr"
+            defaultValue={patient?.patient_code ?? ''}
+          />
         </Field>
       </fieldset>
 
       {isNew ? (
         <fieldset className="grid gap-4 border-t border-slate-100 pt-6 sm:grid-cols-3">
-          <legend className="mb-3 text-sm font-semibold text-slate-800">ولی / همراه (برای کودکان)</legend>
-          <Field label="نام و نام خانوادگی" htmlFor="guardian_name" error={err('guardian.full_name')}>
+          <legend className="mb-3 text-sm font-semibold text-slate-800">
+            ولی / همراه (برای کودکان)
+          </legend>
+          <Field
+            label="نام و نام خانوادگی"
+            htmlFor="guardian_name"
+            error={err('guardian.full_name')}
+          >
             <Input id="guardian_name" name="guardian_name" />
           </Field>
           <Field label="نسبت" htmlFor="guardian_relation">
@@ -83,14 +124,21 @@ export function PatientForm({ action, patient }: { action: Action; patient?: Pat
           <Field label="تلفن" htmlFor="guardian_phone">
             <Input id="guardian_phone" name="guardian_phone" dir="ltr" />
           </Field>
-          <Field label="رضایت آگاهانه ثبت شد توسط" htmlFor="consent_by" className="sm:col-span-3" hint="نام فردی که فرم رضایت را امضا کرده است.">
+          <Field
+            label="رضایت آگاهانه ثبت شد توسط"
+            htmlFor="consent_by"
+            className="sm:col-span-3"
+            hint="نام فردی که فرم رضایت را امضا کرده است."
+          >
             <Input id="consent_by" name="consent_by" />
           </Field>
         </fieldset>
       ) : null}
 
       <div className="flex justify-end">
-        <SubmitButton pendingText="در حال ذخیره…">{isNew ? 'ثبت مراجعه‌کننده' : 'ذخیره تغییرات'}</SubmitButton>
+        <SubmitButton pendingText="در حال ذخیره…">
+          {isNew ? 'ثبت مراجعه‌کننده' : 'ذخیره تغییرات'}
+        </SubmitButton>
       </div>
     </form>
   );

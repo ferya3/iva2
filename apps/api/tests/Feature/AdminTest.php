@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AssessmentProtocol;
 use App\Models\AssessmentVersion;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,14 @@ class AdminTest extends TestCase
         $this->getJson('/api/v1/admin/tenants')->assertOk()->assertJsonCount(2, 'data');
         $this->getJson('/api/v1/admin/stats')->assertOk()->assertJsonPath('tenants', 2);
         $this->getJson('/api/v1/admin/audit-logs')->assertOk()->assertJsonPath('total', 2);
+    }
+
+    public function test_clinic_search_does_not_bypass_the_status_filter(): void
+    {
+        Sanctum::actingAs(User::factory()->platformAdmin()->create());
+        Tenant::factory()->create(['name' => 'Alpha', 'slug' => 'alpha-x', 'status' => 'active']);
+        Tenant::factory()->create(['name' => 'Beta', 'slug' => 'alpha-y', 'status' => 'suspended']);
+        $this->getJson('/api/v1/admin/tenants?q=alpha&status=suspended')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.name', 'Beta');
     }
 
     public function test_admins_provision_and_suspend_clinics(): void

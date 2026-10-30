@@ -12,5 +12,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": {"@cognitest/assessment-engine": "workspace:*", "@cognitest/timing-core": "workspace:*"}
+  "dependencies": {
+    "@cognitest/assessment-engine": "workspace:*",
+    "@cognitest/timing-core": "workspace:*"
+  }
 }

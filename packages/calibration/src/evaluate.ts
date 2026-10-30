@@ -62,14 +62,34 @@ export function evaluateCalibration(
       message: `refresh rate ${display.refresh_rate_hz} Hz is below ${thresholds.minRefreshHz} Hz`,
     });
   }
-  upper('display.jitter', display.frame_interval_sd_ms, thresholds.maxFrameSdMs, 'frame interval SD (ms)');
-  upper('display.dropped_frames', display.dropped_frame_ratio, thresholds.maxDroppedRatio, 'dropped frame ratio');
-  upper('input.dispatch_latency', input.dispatch_latency_p95_ms, thresholds.maxInputDispatchP95Ms, 'input dispatch p95 (ms)');
+  upper(
+    'display.jitter',
+    display.frame_interval_sd_ms,
+    thresholds.maxFrameSdMs,
+    'frame interval SD (ms)',
+  );
+  upper(
+    'display.dropped_frames',
+    display.dropped_frame_ratio,
+    thresholds.maxDroppedRatio,
+    'dropped frame ratio',
+  );
+  upper(
+    'input.dispatch_latency',
+    input.dispatch_latency_p95_ms,
+    thresholds.maxInputDispatchP95Ms,
+    'input dispatch p95 (ms)',
+  );
 
   if (thresholds.requireAudio && !audio.available) {
     fails.push({ code: 'audio.unavailable', message: 'audio output is required but unavailable' });
   }
-  upper('audio.output_latency', audio.output_latency_ms, thresholds.maxAudioOutputLatencyMs, 'audio output latency (ms)');
+  upper(
+    'audio.output_latency',
+    audio.output_latency_ms,
+    thresholds.maxAudioOutputLatencyMs,
+    'audio output latency (ms)',
+  );
 
   const verdict = fails.length ? 'fail' : warns.length ? 'warn' : 'pass';
   return { display, input, audio, verdict, reasons: [...fails, ...warns] };

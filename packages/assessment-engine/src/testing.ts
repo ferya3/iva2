@@ -4,7 +4,13 @@
  * milliseconds of wall time with exact, reproducible timing.
  */
 import { ManualClock, OffsetClock } from '@cognitest/timing-core';
-import type { EnvironmentSignal, EnvironmentSource, FrameSource, InputSource, RawInput } from './ports';
+import type {
+  EnvironmentSignal,
+  EnvironmentSource,
+  FrameSource,
+  InputSource,
+  RawInput,
+} from './ports';
 
 export class VirtualDisplay implements FrameSource {
   readonly clock = new ManualClock(10_000);

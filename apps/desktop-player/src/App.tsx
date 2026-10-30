@@ -40,10 +40,16 @@ export function App() {
       .resume()
       .then((r) => {
         if (r.pendingUpload) setScreen({ name: 'upload', aborted: false });
-        else if (r.session && ['INVITED', 'DEVICE_CHECK', 'CALIBRATION', 'READY'].includes(r.session.status)) setScreen(screenFor(r.session));
+        else if (
+          r.session &&
+          ['INVITED', 'DEVICE_CHECK', 'CALIBRATION', 'READY'].includes(r.session.status)
+        )
+          setScreen(screenFor(r.session));
         else setScreen({ name: 'join' });
       });
-    return bridge().onDeepLink((code) => setScreen((s) => (s.name === 'join' || s.name === 'loading' ? { name: 'join', code } : s)));
+    return bridge().onDeepLink((code) =>
+      setScreen((s) => (s.name === 'join' || s.name === 'loading' ? { name: 'join', code } : s)),
+    );
   }, []);
 
   const finished = useCallback((lastSequence: number, aborted: boolean) => {
@@ -53,22 +59,55 @@ export function App() {
 
   switch (screen.name) {
     case 'loading':
-      return <div className="grid h-full place-items-center"><Spinner className="h-8 w-8 text-brand-600" /></div>;
+      return (
+        <div className="grid h-full place-items-center">
+          <Spinner className="h-8 w-8 text-brand-600" />
+        </div>
+      );
     case 'join':
-      return <JoinScreen initialCode={screen.code} onJoined={(session) => setScreen({ name: 'device', session })} />;
+      return (
+        <JoinScreen
+          initialCode={screen.code}
+          onJoined={(session) => setScreen({ name: 'device', session })}
+        />
+      );
     case 'device':
-      return <DeviceCheckScreen session={screen.session} onPassed={() => setScreen({ name: 'calibration', session: screen.session })} />;
+      return (
+        <DeviceCheckScreen
+          session={screen.session}
+          onPassed={() => setScreen({ name: 'calibration', session: screen.session })}
+        />
+      );
     case 'calibration':
-      return <CalibrationScreen session={screen.session} onReady={(hz) => setScreen({ name: 'ready', session: screen.session, refreshRateHz: hz })} />;
+      return (
+        <CalibrationScreen
+          session={screen.session}
+          onReady={(hz) => setScreen({ name: 'ready', session: screen.session, refreshRateHz: hz })}
+        />
+      );
     case 'ready':
       return (
         <ReadyScreen
           session={screen.session}
-          onStart={(seed) => setScreen({ name: 'run', session: screen.session, refreshRateHz: screen.refreshRateHz, seed })}
+          onStart={(seed) =>
+            setScreen({
+              name: 'run',
+              session: screen.session,
+              refreshRateHz: screen.refreshRateHz,
+              seed,
+            })
+          }
         />
       );
     case 'run':
-      return <RunScreen session={screen.session} seed={screen.seed} refreshRateHz={screen.refreshRateHz} onFinished={finished} />;
+      return (
+        <RunScreen
+          session={screen.session}
+          seed={screen.seed}
+          refreshRateHz={screen.refreshRateHz}
+          onFinished={finished}
+        />
+      );
     case 'upload':
       return (
         <UploadScreen

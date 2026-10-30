@@ -38,7 +38,11 @@ export class PlayerApiClient implements BatchTransport {
     this.token = token;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<{ status: number; body: T }> {
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+  ): Promise<{ status: number; body: T }> {
     let res: Response;
     try {
       res = await this.fetchImpl(this.baseUrl + path, {
@@ -58,10 +62,18 @@ export class PlayerApiClient implements BatchTransport {
     }
     const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (!res.ok) {
-      const failure = new ApiFailure('http', String(json.message ?? res.statusText), res.status, json.code as string | undefined, json.details as Record<string, unknown> | undefined);
+      const failure = new ApiFailure(
+        'http',
+        String(json.message ?? res.statusText),
+        res.status,
+        json.code as string | undefined,
+        json.details as Record<string, unknown> | undefined,
+      );
       if (res.status === 429) {
         const retryAfter = Number(res.headers.get('Retry-After'));
-        Object.assign(failure, { retryAfterMs: Number.isFinite(retryAfter) ? retryAfter * 1000 : undefined });
+        Object.assign(failure, {
+          retryAfterMs: Number.isFinite(retryAfter) ? retryAfter * 1000 : undefined,
+        });
       }
       throw failure;
     }
@@ -69,7 +81,12 @@ export class PlayerApiClient implements BatchTransport {
   }
 
   async join(code: string, deviceId: string): Promise<{ token: string; session: PlayerSession }> {
-    return (await this.request<{ token: string; session: PlayerSession }>('POST', '/player/join', { code, device_id: deviceId })).body;
+    return (
+      await this.request<{ token: string; session: PlayerSession }>('POST', '/player/join', {
+        code,
+        device_id: deviceId,
+      })
+    ).body;
   }
 
   async session(): Promise<PlayerSession> {
@@ -77,42 +94,74 @@ export class PlayerApiClient implements BatchTransport {
   }
 
   async deviceCheck(sessionId: string, info: Record<string, unknown>): Promise<{ status: string }> {
-    return (await this.request<{ status: string }>('POST', `/sessions/${sessionId}/device-check`, info)).body;
+    return (
+      await this.request<{ status: string }>('POST', `/sessions/${sessionId}/device-check`, info)
+    ).body;
   }
 
   async calibration(sessionId: string, result: CalibrationPayload) {
     return (
-      await this.request<{ verdict: 'pass' | 'warn' | 'fail'; reasons: Array<{ code: string; message: string }>; status: string }>(
-        'POST',
-        `/sessions/${sessionId}/calibration`,
-        result,
-      )
+      await this.request<{
+        verdict: 'pass' | 'warn' | 'fail';
+        reasons: Array<{ code: string; message: string }>;
+        status: string;
+      }>('POST', `/sessions/${sessionId}/calibration`, result)
     ).body;
   }
 
-  async start(sessionId: string, offline?: { seed: number; startedAt: string }): Promise<{ seed: number }> {
-    const body = offline ? { offline_seed: offline.seed, offline_started_at: offline.startedAt } : {};
-    return (await this.request<{ seed: number }>('POST', `/sessions/${sessionId}/start`, body)).body;
+  async start(
+    sessionId: string,
+    offline?: { seed: number; startedAt: string },
+  ): Promise<{ seed: number }> {
+    const body = offline
+      ? { offline_seed: offline.seed, offline_started_at: offline.startedAt }
+      : {};
+    return (await this.request<{ seed: number }>('POST', `/sessions/${sessionId}/start`, body))
+      .body;
   }
 
-  async complete(sessionId: string, finalSequence: number): Promise<{ status: string; missing_from: number | null }> {
-    return (await this.request<{ status: string; missing_from: number | null }>('POST', `/sessions/${sessionId}/complete`, { final_sequence: finalSequence })).body;
+  async complete(
+    sessionId: string,
+    finalSequence: number,
+  ): Promise<{ status: string; missing_from: number | null }> {
+    return (
+      await this.request<{ status: string; missing_from: number | null }>(
+        'POST',
+        `/sessions/${sessionId}/complete`,
+        { final_sequence: finalSequence },
+      )
+    ).body;
   }
 
   /** BatchTransport: maps HTTP outcomes onto the sync worker's vocabulary. */
   async send(batch: EventBatch): Promise<TransportResult> {
     try {
-      const { body } = await this.request<EventBatchAck>('POST', `/sessions/${batch.session_id}/events/batch`, batch);
+      const { body } = await this.request<EventBatchAck>(
+        'POST',
+        `/sessions/${batch.session_id}/events/batch`,
+        batch,
+      );
       return { kind: 'acked', ack: body };
     } catch (error) {
       if (!(error instanceof ApiFailure)) throw error;
       if (error.retryable) {
-        return { kind: 'retryable', error: error.message, retryAfterMs: (error as ApiFailure & { retryAfterMs?: number }).retryAfterMs };
+        return {
+          kind: 'retryable',
+          error: error.message,
+          retryAfterMs: (error as ApiFailure & { retryAfterMs?: number }).retryAfterMs,
+        };
       }
       if (error.status === 409 && error.code === 'sequence_conflict') {
-        return { kind: 'sequence_conflict', expectedSequence: Number(error.details?.expected_sequence) };
+        return {
+          kind: 'sequence_conflict',
+          expectedSequence: Number(error.details?.expected_sequence),
+        };
       }
-      return { kind: 'rejected', status: error.status ?? 0, message: `${error.code ?? 'error'}: ${error.message}` };
+      return {
+        kind: 'rejected',
+        status: error.status ?? 0,
+        message: `${error.code ?? 'error'}: ${error.message}`,
+      };
     }
   }
 }

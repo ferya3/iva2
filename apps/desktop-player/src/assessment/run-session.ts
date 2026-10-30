@@ -11,7 +11,11 @@ import {
 } from '@cognitest/assessment-engine';
 import { WebAudioPort } from '@cognitest/audio-engine';
 import { EventRecorder } from '@cognitest/event-recorder';
-import { AnimationFrameSource, DocumentEnvironment, DomStimulusRenderer } from '@cognitest/stimulus-renderer';
+import {
+  AnimationFrameSource,
+  DocumentEnvironment,
+  DomStimulusRenderer,
+} from '@cognitest/stimulus-renderer';
 import { IpcOutboxSink } from './ipc-sink';
 
 export interface RunOptions {

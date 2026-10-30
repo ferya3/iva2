@@ -49,7 +49,14 @@ export const EVENT_INGEST_STATUSES: readonly SessionStatus[] = ['RUNNING', 'UPLO
 
 /** Persian labels and UI tone for every status (panels and player). */
 export const SESSION_STATUS_META: Readonly<
-  Record<SessionStatus, { fa: string; en: string; tone: 'neutral' | 'info' | 'progress' | 'success' | 'warning' | 'danger' }>
+  Record<
+    SessionStatus,
+    {
+      fa: string;
+      en: string;
+      tone: 'neutral' | 'info' | 'progress' | 'success' | 'warning' | 'danger';
+    }
+  >
 > = {
   CREATED: { fa: 'ایجاد شده', en: 'Created', tone: 'neutral' },
   INVITED: { fa: 'دعوت ارسال شده', en: 'Invited', tone: 'info' },

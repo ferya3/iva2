@@ -1,4 +1,10 @@
-import type { MeDto, Paginated, PatientDto, SessionStatus, ValidityStatus } from '@cognitest/shared-types';
+import type {
+  MeDto,
+  Paginated,
+  PatientDto,
+  SessionStatus,
+  ValidityStatus,
+} from '@cognitest/shared-types';
 
 export type { MeDto, Paginated };
 
@@ -28,7 +34,13 @@ export interface Session {
   completed_at: string | null;
   created_at: string;
   calibration?: { verdict: 'pass' | 'warn' | 'fail'; refresh_rate_hz: number } | null;
-  history?: Array<{ from: string | null; to: SessionStatus; actor_type: string; reason: string | null; at: string }>;
+  history?: Array<{
+    from: string | null;
+    to: SessionStatus;
+    actor_type: string;
+    reason: string | null;
+    at: string;
+  }>;
 }
 
 export interface Dashboard {
@@ -38,8 +50,19 @@ export interface Dashboard {
   invalid_sessions: number;
   clinicians: number;
   sessions_this_month: number;
-  subscription: { plan: string; status: string; ends_at: string | null; sessions_per_month: number | null } | null;
-  recent_sessions: Array<{ id: string; patient_code: string; status: SessionStatus; validity_status: ValidityStatus | null; created_at: string }>;
+  subscription: {
+    plan: string;
+    status: string;
+    ends_at: string | null;
+    sessions_per_month: number | null;
+  } | null;
+  recent_sessions: Array<{
+    id: string;
+    patient_code: string;
+    status: SessionStatus;
+    validity_status: ValidityStatus | null;
+    created_at: string;
+  }>;
 }
 
 export interface AssessmentType {
@@ -48,7 +71,12 @@ export interface AssessmentType {
   name: string;
   category: string;
   description: string | null;
-  versions: Array<{ id: string; version: string; is_clinical: boolean; estimated_duration_seconds: number }>;
+  versions: Array<{
+    id: string;
+    version: string;
+    is_clinical: boolean;
+    estimated_duration_seconds: number;
+  }>;
 }
 
 export interface Results {
@@ -56,7 +84,13 @@ export interface Results {
   scoring_run_id: string;
   algorithm_version: string;
   validity_status: ValidityStatus;
-  quality_flags: Array<{ code: string; severity: 'info' | 'warning' | 'critical'; message: string; value?: number; threshold?: number }>;
+  quality_flags: Array<{
+    code: string;
+    severity: 'info' | 'warning' | 'critical';
+    message: string;
+    value?: number;
+    threshold?: number;
+  }>;
   metrics: Array<{ key: string; value: number | null; unit: string | null; scope: string }>;
   scored_at: string;
 }

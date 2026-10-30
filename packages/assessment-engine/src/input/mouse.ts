@@ -12,7 +12,12 @@ export class MouseInput implements InputSource {
     const listener = (e: Event) => {
       const p = e as PointerEvent;
       if (p.pointerType && p.pointerType !== 'mouse') return;
-      handler({ input: 'mouse', key: BUTTONS[p.button] ?? `button${p.button}`, sourceTime: p.timeStamp, repeat: false });
+      handler({
+        input: 'mouse',
+        key: BUTTONS[p.button] ?? `button${p.button}`,
+        sourceTime: p.timeStamp,
+        repeat: false,
+      });
     };
     this.target.addEventListener('pointerdown', listener, { capture: true });
     return () => this.target.removeEventListener('pointerdown', listener, { capture: true });

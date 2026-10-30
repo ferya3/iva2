@@ -41,7 +41,9 @@ export function RunScreen({
       container: surface.current,
       record: (events) => bridge().record(events),
       beforeBlock: (block, index) =>
-        new Promise<void>((resolve) => setInstruction({ block, index, resolve })).then(() => setInstruction(null)),
+        new Promise<void>((resolve) => setInstruction({ block, index, resolve })).then(() =>
+          setInstruction(null),
+        ),
       onProgress: () => undefined,
     });
     // Clinician escape hatch: Ctrl+Shift+Q aborts the run (recorded as aborted).
@@ -79,15 +81,23 @@ export function RunScreen({
     <>
       <div ref={surface} className="test-surface" />
       {instruction ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black p-12 text-white" style={{ cursor: 'default' }}>
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black p-12 text-white"
+          style={{ cursor: 'default' }}
+        >
           <div className="max-w-2xl text-center">
             <p className="mb-4 text-sm text-slate-400">
-              بخش {(instruction.index + 1).toLocaleString('fa-IR')} از {total.toLocaleString('fa-IR')}
+              بخش {(instruction.index + 1).toLocaleString('fa-IR')} از{' '}
+              {total.toLocaleString('fa-IR')}
               {instruction.block.practice ? ' · تمرینی' : ''}
             </p>
-            <p className="text-2xl leading-[2.2]">{instruction.block.instructions?.fa ?? 'برای شروع آماده شوید.'}</p>
+            <p className="text-2xl leading-[2.2]">
+              {instruction.block.instructions?.fa ?? 'برای شروع آماده شوید.'}
+            </p>
             <p className="mt-10 text-slate-400">
-              هر وقت آماده بودید کلید <span className="ltr rounded bg-white/10 px-2 py-0.5 font-mono">Space</span> را فشار دهید.
+              هر وقت آماده بودید کلید{' '}
+              <span className="ltr rounded bg-white/10 px-2 py-0.5 font-mono">Space</span> را فشار
+              دهید.
             </p>
           </div>
         </div>

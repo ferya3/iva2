@@ -1,0 +1,589 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "batch_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "engine_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][\\w.]+)?$"
+    },
+    "events": {
+      "minItems": 1,
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "session_started"
+              },
+              "engine_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "protocol_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "protocol_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "seed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4294967295
+              },
+              "wall_clock_iso": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "engine_version",
+              "protocol_key",
+              "protocol_version",
+              "seed",
+              "wall_clock_iso"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "session_ended"
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "aborted"
+                ]
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "block_started"
+              },
+              "block_index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "block_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "block_index",
+              "block_key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "block_ended"
+              },
+              "block_index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "block_index"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "stimulus_presented"
+              },
+              "trial_index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "block_index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "stimulus_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "modality": {
+                "type": "string",
+                "enum": [
+                  "visual",
+                  "auditory"
+                ]
+              },
+              "is_target": {
+                "type": "boolean"
+              },
+              "planned_time_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "actual_time_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "frame_number": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "presentation_status": {
+                "type": "string",
+                "enum": [
+                  "on_time",
+                  "late",
+                  "dropped"
+                ]
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "trial_index",
+              "block_index",
+              "stimulus_id",
+              "modality",
+              "is_target",
+              "planned_time_ms",
+              "actual_time_ms",
+              "frame_number",
+              "presentation_status"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "stimulus_cleared"
+              },
+              "trial_index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "trial_index"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "response"
+              },
+              "received_time_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "input": {
+                "type": "string",
+                "enum": [
+                  "keyboard",
+                  "mouse"
+                ]
+              },
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "stimulus_sequence": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reaction_time_ms": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "validity": {
+                "type": "string",
+                "enum": [
+                  "valid",
+                  "anticipatory",
+                  "late",
+                  "unmatched"
+                ]
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "received_time_ms",
+              "input",
+              "key",
+              "stimulus_sequence",
+              "reaction_time_ms",
+              "validity"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "focus_lost"
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "focus_gained"
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "visibility_hidden"
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "visibility_visible"
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "frame_drop"
+              },
+              "expected_interval_ms": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "observed_interval_ms": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "dropped_frames": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "expected_interval_ms",
+              "observed_interval_ms",
+              "dropped_frames"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "audio_error"
+              },
+              "message": {
+                "type": "string",
+                "maxLength": 1024
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "message"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "timestamp_ms": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 14400000
+              },
+              "type": {
+                "type": "string",
+                "const": "marker"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "sequence",
+              "timestamp_ms",
+              "type",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "session_id",
+    "batch_id",
+    "engine_version",
+    "events"
+  ],
+  "additionalProperties": false
+}

@@ -97,7 +97,9 @@ export class SyncWorker {
       const batch = store.nextBatch(sessionId, max);
       if (!batch) {
         const stats = store.stats(sessionId);
-        return this.emit(stats.failed ? { status: 'failed', reason: 'outbox failed' } : { status: 'idle' });
+        return this.emit(
+          stats.failed ? { status: 'failed', reason: 'outbox failed' } : { status: 'idle' },
+        );
       }
 
       let result: TransportResult;
@@ -109,7 +111,10 @@ export class SyncWorker {
           events: batch.events,
         });
       } catch (error) {
-        result = { kind: 'retryable', error: error instanceof Error ? error.message : String(error) };
+        result = {
+          kind: 'retryable',
+          error: error instanceof Error ? error.message : String(error),
+        };
       }
 
       switch (result.kind) {
@@ -125,7 +130,10 @@ export class SyncWorker {
             break;
           }
           store.markFailed(sessionId, `server expects sequence ${result.expectedSequence}`);
-          return this.emit({ status: 'failed', reason: `sequence gap before ${batch.events[0]!.sequence}` });
+          return this.emit({
+            status: 'failed',
+            reason: `sequence gap before ${batch.events[0]!.sequence}`,
+          });
         case 'rejected':
           store.recordAttempt(sessionId, batch.batchId, result.message);
           store.markFailed(sessionId, result.message);
@@ -135,7 +143,10 @@ export class SyncWorker {
           if (!retry || this.stopped) {
             return this.emit({ status: 'waiting', retryInMs: 0, attempt, lastError: result.error });
           }
-          const delay = Math.max(result.retryAfterMs ?? 0, backoffDelay(attempt, this.backoff, this.random));
+          const delay = Math.max(
+            result.retryAfterMs ?? 0,
+            backoffDelay(attempt, this.backoff, this.random),
+          );
           attempt++;
           this.emit({ status: 'waiting', retryInMs: delay, attempt, lastError: result.error });
           await this.sleep(delay);

@@ -20,7 +20,14 @@ const SID = randomUUID();
 
 /** Minimal HTTP fake of the Laravel player API with the same ingest rules. */
 function fakeServer() {
-  const server = { online: false, status: 'READY', stored: [] as SessionEvent[], batches: new Map<string, number>(), offlineStart: null as unknown, completeCalls: 0 };
+  const server = {
+    online: false,
+    status: 'READY',
+    stored: [] as SessionEvent[],
+    batches: new Map<string, number>(),
+    offlineStart: null as unknown,
+    completeCalls: 0,
+  };
   const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
   const fetchImpl = (async (url: string, init: RequestInit) => {
     if (!server.online) throw new TypeError('fetch failed');
@@ -33,20 +40,36 @@ function fakeServer() {
     if (url.endsWith('/events/batch')) {
       const batch = body as EventBatch;
       expect(eventBatchSchema.safeParse(batch).success).toBe(true);
-      if (server.status !== 'RUNNING' && server.status !== 'UPLOADING') return json(409, { code: 'session_not_running' });
+      if (server.status !== 'RUNNING' && server.status !== 'UPLOADING')
+        return json(409, { code: 'session_not_running' });
       const known = server.batches.get(batch.batch_id);
-      if (known !== undefined) return json(200, { batch_id: batch.batch_id, accepted: 0, duplicate: true, last_sequence: known });
+      if (known !== undefined)
+        return json(200, {
+          batch_id: batch.batch_id,
+          accepted: 0,
+          duplicate: true,
+          last_sequence: known,
+        });
       const expected = server.stored.length + 1;
-      if (batch.events[0]!.sequence !== expected) return json(409, { code: 'sequence_conflict', details: { expected_sequence: expected } });
+      if (batch.events[0]!.sequence !== expected)
+        return json(409, { code: 'sequence_conflict', details: { expected_sequence: expected } });
       server.stored.push(...batch.events);
       server.batches.set(batch.batch_id, server.stored.length);
-      return json(201, { batch_id: batch.batch_id, accepted: batch.events.length, duplicate: false, last_sequence: server.stored.length });
+      return json(201, {
+        batch_id: batch.batch_id,
+        accepted: batch.events.length,
+        duplicate: false,
+        last_sequence: server.stored.length,
+      });
     }
     if (url.endsWith('/complete')) {
       server.completeCalls++;
       const done = server.stored.length === body.final_sequence;
       server.status = done ? 'COMPLETED' : 'UPLOADING';
-      return json(done ? 200 : 202, { status: server.status, missing_from: done ? null : server.stored.length + 1 });
+      return json(done ? 200 : 202, {
+        status: server.status,
+        missing_from: done ? null : server.stored.length + 1,
+      });
     }
     return json(404, {});
   }) as unknown as typeof fetch;
@@ -57,9 +80,15 @@ describe('offline run → later upload', () => {
   it('runs without network, keeps data encrypted on disk and uploads exactly once after reconnecting', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'player-'));
     const key = randomBytes(32);
-    const store = new SqliteOutboxStore(new DatabaseSync(join(dir, 'outbox.sqlite')), new PayloadCipher(key));
+    const store = new SqliteOutboxStore(
+      new DatabaseSync(join(dir, 'outbox.sqlite')),
+      new PayloadCipher(key),
+    );
     const state = new StateStore(join(dir, 'state.json'), () => 'device-1');
-    state.update({ sessionId: SID, offlineStart: { seed: 4242, startedAt: new Date().toISOString(), confirmed: false } });
+    state.update({
+      sessionId: SID,
+      offlineStart: { seed: 4242, startedAt: new Date().toISOString(), confirmed: false },
+    });
 
     // 1. The engine records straight into the encrypted SQLite outbox.
     const h = createHarness(DEMO_CPT_PROTOCOL, { seed: 4242, sinks: [new OutboxSink(store, SID)] });
@@ -72,7 +101,10 @@ describe('offline run → later upload', () => {
     const states: UploadState[] = [];
     const makeService = () =>
       new UploadService({
-        store: new SqliteOutboxStore(new DatabaseSync(join(dir, 'outbox.sqlite')), new PayloadCipher(key)),
+        store: new SqliteOutboxStore(
+          new DatabaseSync(join(dir, 'outbox.sqlite')),
+          new PayloadCipher(key),
+        ),
         api: new PlayerApiClient('https://api.test', fetchImpl),
         state: new StateStore(join(dir, 'state.json'), () => 'unused'),
         engineVersion: '1.0.0',
@@ -91,7 +123,9 @@ describe('offline run → later upload', () => {
 
     expect(last.phase).toBe('completed');
     expect(server.offlineStart).toMatchObject({ offline_seed: 4242 });
-    expect(server.stored.map((e) => e.sequence)).toEqual(Array.from({ length: total }, (_, i) => i + 1));
+    expect(server.stored.map((e) => e.sequence)).toEqual(
+      Array.from({ length: total }, (_, i) => i + 1),
+    );
     expect(server.completeCalls).toBe(1);
     expect(new StateStore(join(dir, 'state.json'), () => 'x').get().completed).toBe(true);
   });

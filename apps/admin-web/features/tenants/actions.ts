@@ -22,7 +22,11 @@ export async function createTenant(_: FormState, form: FormData): Promise<FormSt
   return { ok: true, message: 'کلینیک ایجاد شد.' };
 }
 
-export async function setTenantStatus(id: string, status: 'active' | 'suspended', _: FormState): Promise<FormState> {
+export async function setTenantStatus(
+  id: string,
+  status: 'active' | 'suspended',
+  _: FormState,
+): Promise<FormState> {
   try {
     await api(`/admin/tenants/${id}`, { method: 'PATCH', body: { status } });
   } catch (e) {

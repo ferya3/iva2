@@ -1,7 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SESSION_STATUS_META, SessionStatus } from '@cognitest/shared-types';
-import { Card, EmptyState, PageHeader, SessionStatusBadge, Table, Td, Th, ValidityBadge, buttonVariants, cn, faDateTime } from '@cognitest/ui';
+import {
+  Card,
+  EmptyState,
+  PageHeader,
+  SessionStatusBadge,
+  Table,
+  Td,
+  Th,
+  ValidityBadge,
+  buttonVariants,
+  cn,
+  faDateTime,
+} from '@cognitest/ui';
 import { api } from '@/lib/api';
 import type { Paginated, Session } from '@/lib/types';
 import { Pagination } from '@/components/pagination';
@@ -18,20 +30,38 @@ const FILTERS: Array<{ key: string; label: string; query: Record<string, string>
 
 export default async function SessionsPage({ searchParams }: PageProps<'/sessions'>) {
   const params = await searchParams;
-  const status = typeof params.status === 'string' && Object.values(SessionStatus).includes(params.status as SessionStatus) ? params.status : undefined;
+  const status =
+    typeof params.status === 'string' &&
+    Object.values(SessionStatus).includes(params.status as SessionStatus)
+      ? params.status
+      : undefined;
   const pending = params.pending === '1' ? '1' : undefined;
   const active = status ?? (pending ? 'pending' : 'all');
-  const res = await api<Paginated<Session>>('/sessions', { query: { status, pending, page: typeof params.page === 'string' ? params.page : 1 } });
+  const res = await api<Paginated<Session>>('/sessions', {
+    query: { status, pending, page: typeof params.page === 'string' ? params.page : 1 },
+  });
 
   return (
     <>
-      <PageHeader title="جلسات آزمون" actions={<Link href="/sessions/new" className={buttonVariants()}>آزمون جدید</Link>} />
+      <PageHeader
+        title="جلسات آزمون"
+        actions={
+          <Link href="/sessions/new" className={buttonVariants()}>
+            آزمون جدید
+          </Link>
+        }
+      />
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Link
             key={f.key}
             href={`/sessions?${new URLSearchParams(f.query)}`}
-            className={cn('rounded-full px-3 py-1 text-sm ring-1', active === f.key ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50')}
+            className={cn(
+              'rounded-full px-3 py-1 text-sm ring-1',
+              active === f.key
+                ? 'bg-brand-600 text-white ring-brand-600'
+                : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50',
+            )}
           >
             {f.label}
           </Link>
@@ -56,11 +86,20 @@ export default async function SessionsPage({ searchParams }: PageProps<'/session
               {res.data.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50">
                   <Td>
-                    <Link href={`/sessions/${s.id}`} className="ltr font-medium text-brand-700 hover:underline">{s.patient?.patient_code}</Link>
+                    <Link
+                      href={`/sessions/${s.id}`}
+                      className="ltr font-medium text-brand-700 hover:underline"
+                    >
+                      {s.patient?.patient_code}
+                    </Link>
                   </Td>
                   <Td>{s.assessment?.name}</Td>
-                  <Td><SessionStatusBadge status={s.status} /></Td>
-                  <Td><ValidityBadge status={s.validity_status} /></Td>
+                  <Td>
+                    <SessionStatusBadge status={s.status} />
+                  </Td>
+                  <Td>
+                    <ValidityBadge status={s.validity_status} />
+                  </Td>
                   <Td>{faDateTime(s.created_at)}</Td>
                   <Td>{faDateTime(s.completed_at)}</Td>
                 </tr>

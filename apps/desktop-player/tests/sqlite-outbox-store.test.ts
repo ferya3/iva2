@@ -10,7 +10,11 @@ import { SqliteOutboxStore } from '../electron/sqlite-outbox-store';
 
 let n = 0;
 const newStore = (db = new DatabaseSync(':memory:'), key = randomBytes(32)) =>
-  new SqliteOutboxStore(db, new PayloadCipher(key), () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`);
+  new SqliteOutboxStore(
+    db,
+    new PayloadCipher(key),
+    () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`,
+  );
 
 outboxContractTests('SqliteOutboxStore', () => newStore());
 
@@ -40,7 +44,9 @@ describe('SqliteOutboxStore specifics', () => {
     const db = new DatabaseSync(':memory:');
     const store = newStore(db);
     store.appendMany('s', [marker(1), marker(2)]);
-    db.exec(`UPDATE outbox_events SET payload = (SELECT payload FROM outbox_events WHERE sequence = 2) WHERE sequence = 1`);
+    db.exec(
+      `UPDATE outbox_events SET payload = (SELECT payload FROM outbox_events WHERE sequence = 2) WHERE sequence = 1`,
+    );
     expect(() => store.nextBatch('s', 10)).toThrow();
   });
 

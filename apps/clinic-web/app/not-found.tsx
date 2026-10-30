@@ -6,7 +6,9 @@ export default function NotFound() {
       <div>
         <p className="text-5xl font-bold text-brand-600">۴۰۴</p>
         <p className="mt-2 text-slate-600">صفحه یا پرونده مورد نظر یافت نشد.</p>
-        <Link href="/" className="mt-4 inline-block text-brand-700 hover:underline">بازگشت به داشبورد</Link>
+        <Link href="/" className="mt-4 inline-block text-brand-700 hover:underline">
+          بازگشت به داشبورد
+        </Link>
       </div>
     </main>
   );

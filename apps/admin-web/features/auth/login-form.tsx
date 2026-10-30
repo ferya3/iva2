@@ -14,9 +14,18 @@ export function LoginForm() {
         <Input id="email" name="email" type="email" dir="ltr" autoComplete="username" required />
       </Field>
       <Field label="رمز عبور" htmlFor="password">
-        <Input id="password" name="password" type="password" dir="ltr" autoComplete="current-password" required />
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          dir="ltr"
+          autoComplete="current-password"
+          required
+        />
       </Field>
-      <SubmitButton className="w-full" size="lg" pendingText="در حال ورود…">ورود</SubmitButton>
+      <SubmitButton className="w-full" size="lg" pendingText="در حال ورود…">
+        ورود
+      </SubmitButton>
     </form>
   );
 }

@@ -60,7 +60,9 @@ export class BlockScheduler {
     return (
       this.next >= this.runtimes.length &&
       this.runtimes.every((r) => r.cleared) &&
-      (!last || this.lastFrameTime >= (last.actualAt ?? last.plannedAt) + this.protocol.timing.responseWindowMs)
+      (!last ||
+        this.lastFrameTime >=
+          (last.actualAt ?? last.plannedAt) + this.protocol.timing.responseWindowMs)
     );
   }
 
@@ -88,7 +90,12 @@ export class BlockScheduler {
     }
   }
 
-  private tryPresentVisual(rt: TrialRuntime, tick: FrameTick, projected: number, interval: number): boolean {
+  private tryPresentVisual(
+    rt: TrialRuntime,
+    tick: FrameTick,
+    projected: number,
+    interval: number,
+  ): boolean {
     if (projected < rt.plannedAt - interval / 2) return false;
     if (this.visualActive) {
       // Previous stimulus overran (stall): clear it first, then present.

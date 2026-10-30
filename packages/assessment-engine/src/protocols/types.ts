@@ -89,14 +89,16 @@ export function assertValidProtocol(p: ProtocolDefinition): void {
   if (Array.isArray(timing.soaMs) && timing.soaMs[0] > timing.soaMs[1]) fail('soa min > max');
   if (timing.responseWindowMs > minSoa) fail('response window must not exceed the minimum SOA');
   if (timing.visualDurationMs >= minSoa) fail('visual duration must be shorter than the SOA');
-  if (timing.anticipationMs < 0 || timing.anticipationMs >= timing.responseWindowMs) fail('bad anticipation');
+  if (timing.anticipationMs < 0 || timing.anticipationMs >= timing.responseWindowMs)
+    fail('bad anticipation');
   p.blocks.forEach((b, i) => {
     if (b.trials < 1) fail(`block ${i} has no trials`);
     if (b.targetRatio < 0 || b.targetRatio > 1) fail(`block ${i} target ratio out of range`);
     for (const m of b.modalities) {
       const ids = [...(b.targets[m] ?? []), ...(b.nonTargets[m] ?? [])];
       if (!(b.targets[m] ?? []).length && b.targetRatio > 0) fail(`block ${i} has no ${m} targets`);
-      if (!(b.nonTargets[m] ?? []).length && b.targetRatio < 1) fail(`block ${i} has no ${m} non-targets`);
+      if (!(b.nonTargets[m] ?? []).length && b.targetRatio < 1)
+        fail(`block ${i} has no ${m} non-targets`);
       for (const id of ids) {
         const spec = p.stimuli[id];
         if (!spec) fail(`unknown stimulus ${id}`);

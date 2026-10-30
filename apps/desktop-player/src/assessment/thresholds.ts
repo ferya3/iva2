@@ -10,7 +10,9 @@ const MAP: Record<string, keyof CalibrationThresholds> = {
 };
 
 /** Server validation rules (snake_case) → calibration package thresholds. */
-export function toThresholds(rules: Record<string, number | boolean> | null): CalibrationThresholds {
+export function toThresholds(
+  rules: Record<string, number | boolean> | null,
+): CalibrationThresholds {
   const out: Record<string, unknown> = { ...DEFAULT_THRESHOLDS };
   for (const [key, value] of Object.entries(rules ?? {})) {
     const target = MAP[key];

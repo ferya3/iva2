@@ -17,9 +17,17 @@ export class StateStore {
     private readonly path: string,
     newDeviceId: () => string,
   ) {
-    const fallback: PlayerState = { deviceId: newDeviceId(), sessionId: null, offlineStart: null, finalSequence: null, completed: false };
+    const fallback: PlayerState = {
+      deviceId: newDeviceId(),
+      sessionId: null,
+      offlineStart: null,
+      finalSequence: null,
+      completed: false,
+    };
     try {
-      this.state = existsSync(path) ? { ...fallback, ...JSON.parse(readFileSync(path, 'utf8')) } : fallback;
+      this.state = existsSync(path)
+        ? { ...fallback, ...JSON.parse(readFileSync(path, 'utf8')) }
+        : fallback;
     } catch {
       this.state = fallback;
     }

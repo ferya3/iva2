@@ -46,7 +46,8 @@ export function buildTrials(
     if (e.type !== 'stimulus_presented') continue;
     const blockKey = blockKeys.get(e.block_index) ?? `block-${e.block_index}`;
     const responses = bySequence.get(e.sequence) ?? [];
-    const first = responses.find((r) => r.validity === 'valid' || r.validity === 'anticipatory') ?? null;
+    const first =
+      responses.find((r) => r.validity === 'valid' || r.validity === 'anticipatory') ?? null;
     const anticipatory = first?.validity === 'anticipatory';
     const responded = first !== null;
     const outcome: Outcome = e.is_target
@@ -65,7 +66,9 @@ export function buildTrials(
       rt: outcome === 'hit' ? first!.reaction_time_ms : null,
       anticipatory,
       repeats: responses.filter((r) => r.validity === 'unmatched').length,
-      excluded: e.presentation_status === 'dropped' || (excludeLateOnsets && e.presentation_status === 'late'),
+      excluded:
+        e.presentation_status === 'dropped' ||
+        (excludeLateOnsets && e.presentation_status === 'late'),
     });
   }
   return trials;

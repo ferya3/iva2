@@ -193,7 +193,11 @@ export class AssessmentEngine {
     const { recorder, protocol, clock, frames } = this.o;
     const trials = this.timeline[index]!;
     const total = trials.length;
-    recorder.record({ type: 'block_started', block_index: index, block_key: protocol.blocks[index]!.key });
+    recorder.record({
+      type: 'block_started',
+      block_index: index,
+      block_key: protocol.blocks[index]!.key,
+    });
     this.monitor.resume();
 
     const scheduler = new BlockScheduler(protocol, trials, this.o.visual, this.o.audio, {

@@ -22,7 +22,13 @@ function payload(form: FormData) {
     handedness: text(form, 'handedness'),
     education: text(form, 'education'),
     phone: text(form, 'phone'),
-    guardian: guardianName ? { full_name: guardianName, relation: text(form, 'guardian_relation') ?? 'other', phone: text(form, 'guardian_phone') } : undefined,
+    guardian: guardianName
+      ? {
+          full_name: guardianName,
+          relation: text(form, 'guardian_relation') ?? 'other',
+          phone: text(form, 'guardian_phone'),
+        }
+      : undefined,
     consent: consentBy ? { accepted_by_name: consentBy, version: '1.0' } : undefined,
   };
 }
@@ -30,7 +36,8 @@ function payload(form: FormData) {
 export async function createPatient(_: FormState, form: FormData): Promise<FormState> {
   let id: string;
   try {
-    id = (await api<{ data: { id: string } }>('/patients', { method: 'POST', body: payload(form) })).data.id;
+    id = (await api<{ data: { id: string } }>('/patients', { method: 'POST', body: payload(form) }))
+      .data.id;
   } catch (e) {
     return toFormError(e);
   }

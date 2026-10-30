@@ -4,7 +4,13 @@ import type { PlayerSession } from '../../electron/ipc-contract';
 import { Shell } from '../components/shell';
 import { bridge, errorMessage } from '../services/bridge';
 
-export function ReadyScreen({ session, onStart }: { session: PlayerSession; onStart: (seed: number, offline: boolean) => void }) {
+export function ReadyScreen({
+  session,
+  onStart,
+}: {
+  session: PlayerSession;
+  onStart: (seed: number, offline: boolean) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clinical = session.assessment.is_clinical;
@@ -31,11 +37,21 @@ export function ReadyScreen({ session, onStart }: { session: PlayerSession; onSt
       <ul className="space-y-2 leading-8 text-slate-700">
         <li>• آزمون به‌صورت تمام‌صفحه اجرا می‌شود و حدود ۷ دقیقه طول می‌کشد.</li>
         <li>• پیش از هر بخش، راهنمای همان بخش نمایش داده می‌شود.</li>
-        <li>• در طول آزمون از پنجره خارج نشوید؛ خروج یا تغییر پنجره ثبت و در اعتبار نتیجه لحاظ می‌شود.</li>
+        <li>
+          • در طول آزمون از پنجره خارج نشوید؛ خروج یا تغییر پنجره ثبت و در اعتبار نتیجه لحاظ می‌شود.
+        </li>
         <li>• اگر اینترنت قطع شود، آزمون ادامه می‌یابد و داده‌ها بعداً ارسال می‌شوند.</li>
       </ul>
-      {!clinical ? <Alert tone="warning" className="mt-6">این نسخه آزمون غیربالینی (نمایشی/پژوهشی) است.</Alert> : null}
-      {error ? <Alert tone="danger" className="mt-4">{error}</Alert> : null}
+      {!clinical ? (
+        <Alert tone="warning" className="mt-6">
+          این نسخه آزمون غیربالینی (نمایشی/پژوهشی) است.
+        </Alert>
+      ) : null}
+      {error ? (
+        <Alert tone="danger" className="mt-4">
+          {error}
+        </Alert>
+      ) : null}
     </Shell>
   );
 }

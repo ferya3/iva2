@@ -8,16 +8,37 @@ const tones = {
   danger: 'bg-rose-50 text-rose-800 ring-rose-200',
 } as const;
 
-export function Alert({ tone = 'info', title, children, className }: { tone?: keyof typeof tones; title?: ReactNode; children?: ReactNode; className?: string }) {
+export function Alert({
+  tone = 'info',
+  title,
+  children,
+  className,
+}: {
+  tone?: keyof typeof tones;
+  title?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={cn('rounded-lg px-4 py-3 text-sm ring-1 ring-inset', tones[tone], className)}>
+    <div
+      role={tone === 'danger' ? 'alert' : 'status'}
+      className={cn('rounded-lg px-4 py-3 text-sm ring-1 ring-inset', tones[tone], className)}
+    >
       {title ? <p className="font-semibold">{title}</p> : null}
       {children ? <div className={title ? 'mt-1' : undefined}>{children}</div> : null}
     </div>
   );
 }
 
-export function EmptyState({ title, description, action }: { title: ReactNode; description?: ReactNode; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
       <p className="font-medium text-slate-800">{title}</p>
@@ -27,7 +48,15 @@ export function EmptyState({ title, description, action }: { title: ReactNode; d
   );
 }
 
-export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -39,7 +68,17 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
   );
 }
 
-export function StatCard({ label, value, hint, icon }: { label: ReactNode; value: ReactNode; hint?: ReactNode; icon?: ReactNode }) {
+export function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  hint?: ReactNode;
+  icon?: ReactNode;
+}) {
   return (
     <div className="rounded-card bg-white p-5 ring-1 ring-slate-200/80">
       <div className="flex items-center justify-between">
@@ -56,7 +95,10 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn('inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-e-transparent', className)}
+      className={cn(
+        'inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-e-transparent',
+        className,
+      )}
     />
   );
 }

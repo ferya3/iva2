@@ -9,12 +9,17 @@ export default async function PlansPage() {
   return (
     <>
       <PageHeader title="پلن‌های اشتراک" />
-      <Alert tone="info" className="mb-6">قیمت نهایی پس از محاسبه هزینه زیرساخت، پشتیبانی و اعتبارسنجی تعیین شود؛ مقدار پیش‌فرض صفر است.</Alert>
+      <Alert tone="info" className="mb-6">
+        قیمت نهایی پس از محاسبه هزینه زیرساخت، پشتیبانی و اعتبارسنجی تعیین شود؛ مقدار پیش‌فرض صفر
+        است.
+      </Alert>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {data.map((p) => (
           <Card key={p.id}>
             <CardHeader title={<span className="ltr">{p.key}</span>} />
-            <CardBody><PlanForm plan={p} /></CardBody>
+            <CardBody>
+              <PlanForm plan={p} />
+            </CardBody>
           </Card>
         ))}
       </div>

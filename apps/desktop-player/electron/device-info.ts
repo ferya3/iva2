@@ -7,9 +7,13 @@ export async function collectDeviceInfo(renderer: RendererDeviceInfo, engineVers
   const display = screen.getPrimaryDisplay();
   let gpu: string | null = null;
   try {
-    const info = (await app.getGPUInfo('basic')) as { gpuDevice?: Array<{ vendorId: number; deviceId: number; active?: boolean }> };
+    const info = (await app.getGPUInfo('basic')) as {
+      gpuDevice?: Array<{ vendorId: number; deviceId: number; active?: boolean }>;
+    };
     const active = info.gpuDevice?.find((g) => g.active) ?? info.gpuDevice?.[0];
-    gpu = active ? `vendor 0x${active.vendorId.toString(16)} device 0x${active.deviceId.toString(16)}` : null;
+    gpu = active
+      ? `vendor 0x${active.vendorId.toString(16)} device 0x${active.deviceId.toString(16)}`
+      : null;
   } catch {
     gpu = null;
   }

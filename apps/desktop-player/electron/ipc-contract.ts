@@ -63,7 +63,13 @@ export interface CognitestBridge {
   resume(): Promise<ResumeInfo>;
   join(code: string): Promise<Result<PlayerSession>>;
   deviceCheck(info: RendererDeviceInfo): Promise<Result<{ status: string }>>;
-  calibration(result: CalibrationPayload): Promise<Result<{ verdict: 'pass' | 'warn' | 'fail'; reasons: Array<{ code: string; message: string }>; status: string }>>;
+  calibration(result: CalibrationPayload): Promise<
+    Result<{
+      verdict: 'pass' | 'warn' | 'fail';
+      reasons: Array<{ code: string; message: string }>;
+      status: string;
+    }>
+  >;
   start(): Promise<Result<{ seed: number; offline: boolean }>>;
   /** Fire-and-forget, ordered: raw events into the encrypted outbox. */
   record(events: SessionEvent[]): void;

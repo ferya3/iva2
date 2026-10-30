@@ -53,7 +53,7 @@ class AdminOverviewController extends Controller
         return response()->json(
             User::query()
                 ->withCount('memberships')
-                ->when($request->input('q'), fn ($q, $s) => $q->where('email', 'ilike', "%{$s}%")->orWhere('name', 'ilike', "%{$s}%"))
+                ->when($request->input('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('email', 'ilike', "%{$s}%")->orWhere('name', 'ilike', "%{$s}%")))
                 ->latest()
                 ->paginate(25, ['id', 'name', 'email', 'platform_role', 'is_active', 'last_login_at', 'created_at'])
         );

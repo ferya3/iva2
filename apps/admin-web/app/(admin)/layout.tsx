@@ -17,7 +17,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Nav />
         </div>
         <form action={logout} className="p-3">
-          <Button type="submit" variant="ghost" className="w-full justify-start text-slate-300 hover:bg-white/5 hover:text-white">
+          <Button
+            type="submit"
+            variant="ghost"
+            className="w-full justify-start text-slate-300 hover:bg-white/5 hover:text-white"
+          >
             <LogOut className="h-4 w-4" /> خروج
           </Button>
         </form>

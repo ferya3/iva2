@@ -13,7 +13,13 @@ const normalize = (raw: string) =>
 
 const format = (code: string) => code.match(/.{1,3}/g)?.join('-') ?? '';
 
-export function JoinScreen({ onJoined, initialCode }: { onJoined: (s: PlayerSession) => void; initialCode?: string | null }) {
+export function JoinScreen({
+  onJoined,
+  initialCode,
+}: {
+  onJoined: (s: PlayerSession) => void;
+  initialCode?: string | null;
+}) {
   const [code, setCode] = useState(normalize(initialCode ?? ''));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +60,11 @@ export function JoinScreen({ onJoined, initialCode }: { onJoined: (s: PlayerSess
         className="h-16 text-center font-mono text-3xl tracking-[0.3em]"
         aria-label="کد ورود"
       />
-      {error ? <Alert tone="danger" className="mt-4">{error}</Alert> : null}
+      {error ? (
+        <Alert tone="danger" className="mt-4">
+          {error}
+        </Alert>
+      ) : null}
     </Shell>
   );
 }

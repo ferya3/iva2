@@ -4,7 +4,9 @@
   "private": true,
   "description": "RTL-first shadcn-style component kit shared by clinic-web and admin-web",
   "type": "module",
-  "sideEffects": ["*.css"],
+  "sideEffects": [
+    "*.css"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css"
