@@ -24,6 +24,7 @@ ADMIN_EMAIL=""
 ADMIN_IPS=""
 REGISTRY_MIRROR=""
 NPM_REGISTRY=""
+APT_MIRROR=""
 SELF_SIGNED=0
 DEMO=0
 SKIP_DOCKER=0
@@ -41,6 +42,7 @@ Usage: install.sh (--domain DOMAIN | --ip [ADDRESS]) [options]
   --admin-ip IP[,IP…]      Addresses allowed to open the admin panel (default: your SSH client IP)
   --registry-mirror URL    Docker Hub mirror (needed on servers in Iran)
   --npm-registry URL       npm mirror used while building images
+  --apt-mirror URL         Debian mirror base for image builds (URL/debian, URL/debian-security)
   --self-signed            Domain mode without Let's Encrypt
   --demo                   Seed a demo clinic (owner@demo.cognitest.ir / password)
   --dir PATH               Install directory (default /opt/cognitest)
@@ -61,6 +63,7 @@ while [[ $# -gt 0 ]]; do
     --admin-ip) ADMIN_IPS="$2"; shift 2 ;;
     --registry-mirror) REGISTRY_MIRROR="$2"; shift 2 ;;
     --npm-registry) NPM_REGISTRY="$2"; shift 2 ;;
+    --apt-mirror) APT_MIRROR="$2"; shift 2 ;;
     --self-signed) SELF_SIGNED=1; shift ;;
     --demo) DEMO=1; shift ;;
     --dir) INSTALL_DIR="$2"; shift 2 ;;
@@ -190,6 +193,7 @@ set_env PUBLIC_API_URL "${API_URL%/api/v1}"
 set_env PUBLIC_CLINIC_URL "$CLINIC_URL"
 set_env PUBLIC_ADMIN_URL "$ADMIN_URL"
 if [[ -n "$NPM_REGISTRY" ]]; then set_env NPM_REGISTRY "$NPM_REGISTRY"; fi
+if [[ -n "$APT_MIRROR" ]]; then set_env DEBIAN_MIRROR "$APT_MIRROR"; fi
 chmod 600 "$ENV_FILE"
 
 # ------------------------------------------------------------- admin access --

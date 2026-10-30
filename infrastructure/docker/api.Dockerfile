@@ -6,6 +6,7 @@ ARG NODE_VERSION=22
 # Mirrors for restricted networks (see scripts/install.sh --npm-registry).
 ARG NPM_REGISTRY=https://registry.npmjs.org
 ARG COMPOSER_INSTALL_FLAGS=--prefer-dist
+ARG DEBIAN_MIRROR=
 
 # --- Composer dependencies -------------------------------------------------
 FROM composer:2 AS vendor
@@ -30,6 +31,13 @@ RUN pnpm install --frozen-lockfile --filter "@cognitest/scoring-engine..." \
 
 # --- Runtime ---------------------------------------------------------------
 FROM php:${PHP_VERSION}-fpm-trixie AS api
+ARG DEBIAN_MIRROR
+# Debian mirror (e.g. inside Iran) + retries, so a stalled download is retried
+# instead of hanging the build. Mirror layout: $DEBIAN_MIRROR/debian(-security).
+RUN if [ -n "$DEBIAN_MIRROR" ]; then \
+      sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR%/}#g" /etc/apt/sources.list.d/debian.sources; \
+    fi \
+ && printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' > /etc/apt/apt.conf.d/80-cognitest-retries
 RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev libicu-dev libzip-dev unzip \
     && docker-php-ext-install -j"$(nproc)" pdo_pgsql intl pcntl zip opcache \
     && pecl install redis && docker-php-ext-enable redis \

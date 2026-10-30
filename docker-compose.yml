@@ -87,6 +87,7 @@ services:
       dockerfile: infrastructure/docker/api.Dockerfile
       args:
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-}
     environment: *api-env
     command:
       [
@@ -121,7 +122,7 @@ services:
     build:
       context: .
       dockerfile: infrastructure/docker/worker.Dockerfile
-      args: { API_IMAGE: 'cognitest/api:${VERSION:-latest}' }
+      args: { API_IMAGE: 'cognitest/api:${VERSION:-latest}', DEBIAN_MIRROR: '${DEBIAN_MIRROR:-}' }
     restart: unless-stopped
     environment: *api-env
     volumes: [reports:/var/www/api/storage/app/private]
