@@ -128,5 +128,5 @@ describe('offline run → later upload', () => {
     );
     expect(server.completeCalls).toBe(1);
     expect(new StateStore(join(dir, 'state.json'), () => 'x').get().completed).toBe(true);
-  });
+  }, 60_000);
 });

@@ -29,12 +29,21 @@ function makeCert() {
     ],
     { stdio: 'ignore' },
   );
-  const pin = execFileSync('sh', [
-    '-c',
-    `openssl x509 -in ${join(dir, 'c.pem')} -outform der | openssl dgst -sha256 -binary | base64`,
+  // openssl's own fingerprint (hex), converted to the installer's base64 form;
+  // no shell pipeline, so it behaves the same on Windows.
+  const hex = execFileSync('openssl', [
+    'x509',
+    '-in',
+    join(dir, 'c.pem'),
+    '-noout',
+    '-fingerprint',
+    '-sha256',
   ])
     .toString()
-    .trim();
+    .split('=')[1]!
+    .trim()
+    .replace(/:/g, '');
+  const pin = Buffer.from(hex, 'hex').toString('base64');
   return { pem: readFileSync(join(dir, 'c.pem'), 'utf8'), pin: `sha256/${pin}` };
 }
 
