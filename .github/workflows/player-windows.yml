@@ -1,0 +1,42 @@
+name: Desktop player (Windows installer)
+
+# GitHub → Actions → "Desktop player (Windows installer)" → Run workflow.
+# Enter the API address printed by scripts/install.sh (and, for a server on
+# a bare IP, the certificate fingerprint). The installer is attached to the
+# run as an artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'API URL, e.g. https://203.0.113.7/api/v1'
+        required: true
+      cert_sha256:
+        description: 'Self-signed server only: MAIN_VITE_API_CERT_SHA256 (sha256/…) printed by the installer'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cognitest/desktop-player test
+      - name: Build installer
+        run: pnpm --filter @cognitest/desktop-player dist:win
+        env:
+          MAIN_VITE_API_URL: ${{ inputs.api_url }}
+          MAIN_VITE_API_CERT_SHA256: ${{ inputs.cert_sha256 }}
+          # Unsigned unless a code-signing certificate is configured.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          CSC_LINK: ${{ secrets.WINDOWS_CERT }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cognitest-Setup-windows
+          path: apps/desktop-player/release/*.exe
+          if-no-files-found: error

@@ -12,7 +12,7 @@
     "test": "vitest run",
     "dist:win": "electron-vite build && electron-builder --win --x64"
   },
-  "dependencies": {
+  "devDependencies": {
     "@cognitest/assessment-engine": "workspace:*",
     "@cognitest/audio-engine": "workspace:*",
     "@cognitest/calibration": "workspace:*",
@@ -20,13 +20,8 @@
     "@cognitest/shared-types": "workspace:*",
     "@cognitest/stimulus-renderer": "workspace:*",
     "@cognitest/timing-core": "workspace:*",
+    "@cognitest/ui": "workspace:*",
     "@cognitest/validation": "workspace:*",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "vazirmatn": "33.0.3",
-    "@cognitest/ui": "workspace:*"
-  },
-  "devDependencies": {
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.10.1",
     "@types/react": "19.3.0",
@@ -35,9 +30,13 @@
     "electron": "45.1.0",
     "electron-builder": "26.18.0",
     "electron-vite": "6.0.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
+    "vazirmatn": "33.0.3",
     "vite": "8.3.5",
     "vitest": "5.0.5"
-  }
+  },
+  "author": "Cognitest"
 }
