@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # Queue worker (Horizon) and scheduler: the API image plus Node.js (scoring
 # engine) and headless Chromium with Persian fonts (PDF reports).
 #   docker build -f infrastructure/docker/worker.Dockerfile -t cognitest/worker .

@@ -20,6 +20,14 @@
 - [پایگاه داده](docs/database/README.md) · [API (OpenAPI)](docs/api/openapi.yaml) · [JSON Schemaهای قرارداد](docs/api/schemas)
 - [پروتکل اعتبارسنجی](docs/validation/README.md) · [استقرار](docs/operations/deployment.md) · [نقشه توسعه](docs/roadmap.md)
 
+## نصب روی سرور (Ubuntu 24.04)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ferya3/iva2/claude/kind-maxwell-ibgtgr/scripts/install.sh | sudo bash -s -- --domain example.ir --email ops@example.ir
+```
+
+جزئیات، گزینه‌ها (از جمله آینه Docker برای سرورهای داخل ایران) و نسخه مخزن خصوصی: [docs/operations/deployment.md](docs/operations/deployment.md).
+
 ## شروع سریع (توسعه)
 
 پیش‌نیازها: Node 22+، pnpm 10، PHP 8.3+ با `pdo_pgsql` و `redis`، Composer، PostgreSQL 16+، Redis.

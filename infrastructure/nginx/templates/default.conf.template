@@ -1,5 +1,6 @@
-# Edge proxy. TLS certificates are mounted at /etc/nginx/certs
-# (e.g. issued by certbot on the host). Hostnames are examples.
+# Edge proxy (template: ${DOMAIN} is substituted at container start).
+# TLS certificates are mounted at /etc/nginx/certs
+# (copied from certbot by scripts/install.sh, or self-signed).
 
 limit_req_zone $binary_remote_addr zone=api_auth:10m rate=10r/m;
 limit_req_zone $binary_remote_addr zone=api_general:10m rate=30r/s;
@@ -20,7 +21,7 @@ server {
 server {
   listen 443 ssl;
   http2 on;
-  server_name api.cognitest.ir;
+  server_name api.${DOMAIN};
   include /etc/nginx/snippets/tls.conf;
   include /etc/nginx/snippets/security-headers.conf;
 
@@ -48,7 +49,7 @@ server {
 server {
   listen 443 ssl;
   http2 on;
-  server_name clinic.cognitest.ir;
+  server_name clinic.${DOMAIN};
   include /etc/nginx/snippets/tls.conf;
   include /etc/nginx/snippets/security-headers.conf;
 
@@ -71,12 +72,13 @@ server {
 server {
   listen 443 ssl;
   http2 on;
-  server_name admin.cognitest.ir;
+  server_name admin.${DOMAIN};
   include /etc/nginx/snippets/tls.conf;
   include /etc/nginx/snippets/security-headers.conf;
 
   # Only reachable from the office VPN / allow-listed addresses.
-  include /etc/nginx/snippets/admin-allowlist.conf;
+  # admin-allowlist.local.conf is written by scripts/install.sh (git-ignored).
+  include /etc/nginx/snippets/admin-allowlist*.conf;
   deny all;
 
   location / {

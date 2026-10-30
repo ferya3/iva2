@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Domain\Tenancy\TenantRole;
 use App\Models\User;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -29,6 +30,33 @@ class AuthTest extends TestCase
         }
         $this->postJson('/api/v1/auth/login', ['email' => 'dr@example.ir', 'password' => 'password'])
             ->assertStatus(429)->assertJsonPath('code', 'too_many_attempts');
+    }
+
+    public function test_rate_limits_follow_the_client_behind_the_panel_proxy(): void
+    {
+        User::factory()->create(['email' => 'dr@example.ir']);
+        $fromPanel = fn (string $client) => $this->withServerVariables(['REMOTE_ADDR' => '172.18.0.5'])
+            ->withHeader('X-Forwarded-For', $client)
+            ->postJson('/api/v1/auth/login', ['email' => 'dr@example.ir', 'password' => 'nope']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $fromPanel('5.5.5.5')->assertStatus(422);
+        }
+        $fromPanel('5.5.5.5')->assertStatus(429);
+        // Another browser behind the same Next.js server is not locked out.
+        $fromPanel('6.6.6.6')->assertStatus(422);
+    }
+
+    public function test_public_clients_cannot_spoof_their_address(): void
+    {
+        $this->withServerVariables(['REMOTE_ADDR' => '91.99.1.2'])->withHeader('X-Forwarded-For', '1.2.3.4')
+            ->postJson('/api/v1/auth/login', ['email' => 'x@example.ir', 'password' => 'nope']);
+        $this->assertTrue(RateLimiter::attempts('login:x@example.ir|91.99.1.2') === 1);
+    }
+
+    public function test_unauthenticated_requests_get_json_401_without_accept_header(): void
+    {
+        $this->get('/api/v1/auth/me')->assertStatus(401)->assertJsonPath('message', 'Unauthenticated.');
     }
 
     public function test_inactive_users_cannot_log_in(): void

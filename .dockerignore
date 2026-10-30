@@ -1,0 +1,17 @@
+**/node_modules
+**/.next
+**/out
+**/release
+**/dist
+**/.turbo
+**/coverage
+apps/api/vendor
+apps/api/.env
+apps/api/storage/logs/*
+apps/api/storage/framework/*/*
+apps/api/storage/app/*
+.env*
+!.env.example
+.git
+infrastructure/nginx/certs
+apps/api/bootstrap/cache/*.php

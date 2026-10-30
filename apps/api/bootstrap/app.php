@@ -27,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Only the private Docker network (nginx, Next.js BFF) may set
+        // X-Forwarded-For, so rate limits and audit logs see the real client.
+        $middleware->trustProxies(at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.1']);
+        // API only: unauthenticated requests get a JSON 401, never a redirect
+        // to a (non-existent) login page — whatever the Accept header says.
+        $middleware->redirectGuestsTo(fn () => null);
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'permission' => RequirePermission::class,

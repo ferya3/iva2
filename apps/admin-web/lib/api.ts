@@ -1,5 +1,5 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers as requestHeaders } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { API_URL, TOKEN_COOKIE } from './config';
 
@@ -28,6 +28,7 @@ export async function api<T>(
   } = {},
 ): Promise<T> {
   const token = (await cookies()).get(TOKEN_COOKIE)?.value;
+  const forwardedFor = await clientForwardedFor();
   const url = new URL(API_URL + path);
   for (const [k, v] of Object.entries(init.query ?? {}))
     if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
@@ -36,6 +37,7 @@ export async function api<T>(
     headers: {
       Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(forwardedFor ? { 'X-Forwarded-For': forwardedFor } : {}),
       ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
@@ -45,6 +47,12 @@ export async function api<T>(
   const body = await res.json().catch(() => ({ message: res.statusText }));
   if (!res.ok) throw new ApiRequestError(res.status, body);
   return body as T;
+}
+
+/** Browser address for the API's rate limits and audit log (see clinic-web). */
+export async function clientForwardedFor(): Promise<string | null> {
+  const h = await requestHeaders();
+  return h.get('x-forwarded-for') ?? h.get('x-real-ip');
 }
 
 export function toFormError(e: unknown): FormState {

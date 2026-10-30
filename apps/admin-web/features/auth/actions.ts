@@ -3,12 +3,17 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { API_URL, COOKIE_SECURE, TOKEN_COOKIE } from '@/lib/config';
-import type { FormState } from '@/lib/api';
+import { clientForwardedFor, type FormState } from '@/lib/api';
 
 export async function login(_: FormState, form: FormData): Promise<FormState> {
+  const forwardedFor = await clientForwardedFor();
   const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(forwardedFor ? { 'X-Forwarded-For': forwardedFor } : {}),
+    },
     body: JSON.stringify({
       email: form.get('email'),
       password: form.get('password'),

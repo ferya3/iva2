@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { MeDto } from '@cognitest/shared-types';
 import { API_URL, COOKIE_SECURE, TENANT_COOKIE, TOKEN_COOKIE } from '@/lib/config';
-import { api, type FormState } from '@/lib/api';
+import { api, clientForwardedFor, type FormState } from '@/lib/api';
 
 const cookieOptions = (maxAge: number) => ({
   httpOnly: true,
@@ -15,9 +15,14 @@ const cookieOptions = (maxAge: number) => ({
 });
 
 export async function login(_: FormState, form: FormData): Promise<FormState> {
+  const forwardedFor = await clientForwardedFor();
   const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(forwardedFor ? { 'X-Forwarded-For': forwardedFor } : {}),
+    },
     body: JSON.stringify({
       email: form.get('email'),
       password: form.get('password'),

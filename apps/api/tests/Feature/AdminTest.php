@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\AssessmentProtocol;
 use App\Models\AssessmentVersion;
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
@@ -13,6 +15,20 @@ use Tests\TestCase;
 
 class AdminTest extends TestCase
 {
+    public function test_first_admin_is_created_from_the_console(): void
+    {
+        $this->artisan('cognitest:create-admin', ['email' => 'Root@Example.ir', '--password' => 'S3cret-pass'])->assertSuccessful();
+        $this->postJson('/api/v1/auth/login', ['email' => 'root@example.ir', 'password' => 'S3cret-pass'])
+            ->assertOk()->assertJsonPath('user.platform_role', 'super_admin');
+    }
+
+    public function test_redeploy_keeps_plan_prices(): void
+    {
+        $this->system(fn () => Plan::query()->where('key', 'starter')->update(['price_irr' => 25_000_000]));
+        $this->system(fn () => $this->seed(PlanSeeder::class));
+        $this->assertSame(25_000_000, $this->system(fn () => Plan::query()->where('key', 'starter')->value('price_irr')));
+    }
+
     public function test_clinic_users_cannot_reach_the_admin_api(): void
     {
         $this->actingAsClinic();

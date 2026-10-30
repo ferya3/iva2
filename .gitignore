@@ -16,3 +16,7 @@ coverage/
 apps/desktop-player/release/
 *.tsbuildinfo
 next-env.d.ts
+
+# Deployment-local files
+infrastructure/nginx/certs/
+infrastructure/nginx/snippets/*.local.conf

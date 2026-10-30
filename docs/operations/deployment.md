@@ -9,19 +9,42 @@
 | Redis      | 2GB (`noeviction`, AOF)                                              |
 | پشتیبان    | فضای ذخیره‌سازی مستقل (Object Storage داخلی سازگار با S3)            |
 
-## راه‌اندازی
+## نصب با یک دستور
+
+پیش از اجرا، رکوردهای DNS نوع A برای `api.`، `clinic.` و `admin.` دامنه را به IP سرور اشاره دهید.
 
 ```bash
-sudo apt install -y docker.io docker-compose-v2 certbot
-git clone <repo> /opt/cognitest && cd /opt/cognitest
-cp .env.production.example .env.production   # رمزها و APP_KEY را تکمیل کنید
-sudo certbot certonly --standalone -d api.cognitest.ir -d clinic.cognitest.ir -d admin.cognitest.ir
-docker compose --env-file .env.production up -d --build
-docker compose logs -f migrate                 # migration + seed (نقش مالک)
+curl -fsSL https://raw.githubusercontent.com/ferya3/iva2/claude/kind-maxwell-ibgtgr/scripts/install.sh | sudo bash -s -- --domain example.ir --email ops@example.ir
 ```
 
+اگر مخزن خصوصی است (raw.githubusercontent بدون توکن کار نمی‌کند):
+
+```bash
+sudo git clone -b claude/kind-maxwell-ibgtgr https://github.com/ferya3/iva2.git /opt/cognitest && sudo bash /opt/cognitest/scripts/install.sh --domain example.ir --email ops@example.ir
+```
+
+اسکریپت `scripts/install.sh` این کارها را انجام می‌دهد:
+
+1. نصب Docker و Compose از مخازن خود Ubuntu (بدون نیاز به download.docker.com)؛
+2. دریافت یا به‌روزرسانی کد در `/opt/cognitest`؛
+3. ساخت رمزهای تصادفی و `APP_KEY` در `.env.production` (در اجراهای بعدی حفظ می‌شوند)؛
+4. گواهی Let's Encrypt برای سه زیردامنه (یا self-signed اگر DNS هنوز آماده نیست) و تنظیم تمدید خودکار؛
+5. محدودکردن پنل مدیریت به IP اتصال SSH شما (یا `--admin-ip`)؛
+6. ساخت imageها، اجرای migration با نقش مالک و راه‌اندازی سرویس‌ها؛
+7. ساخت حساب مدیر سامانه؛ رمز در `/root/cognitest-admin.txt` ذخیره می‌شود.
+
+اجرای دوباره همان دستور امن است: کد به‌روز، imageها بازسازی و migrationها اعمال می‌شوند؛ رمزها، گواهی و حساب مدیر دست نمی‌خورند.
+
+| گزینه                   | کاربرد                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| `--registry-mirror URL` | آینه Docker Hub — روی سرورهای داخل ایران لازم است (Docker Hub آدرس‌های ایران را مسدود می‌کند) |
+| `--npm-registry URL`    | آینه npm برای مرحله build                                                                     |
+| `--self-signed`         | بدون Let's Encrypt (تست یا شبکه داخلی)                                                        |
+| `--admin-ip IP,IP`      | آدرس‌های مجاز برای `admin.`                                                                   |
+| `--demo`                | کلینیک نمایشی (`owner@demo.cognitest.ir` / `password`)                                        |
+| `--admin-email`         | ایمیل حساب مدیر سامانه (پیش‌فرض `admin@DOMAIN`)                                               |
+
 - PostgreSQL و Redis فقط در شبکه `internal` هستند (پورت عمومی ندارند).
-- پنل مدیریت فقط از آدرس‌های `infrastructure/nginx/snippets/admin-allowlist.conf` در دسترس است.
 - Horizon dashboard (`/horizon`) فقط از شبکه داخلی و برای مدیر سامانه.
 
 ## پشتیبان‌گیری
@@ -38,9 +61,10 @@ docker compose exec -T postgres pg_dump -U cognitest -Fc cognitest | \
 
 ## به‌روزرسانی
 
+همان دستور نصب را دوباره اجرا کنید، یا:
+
 ```bash
-git pull && docker compose --env-file .env.production build
-docker compose --env-file .env.production up -d   # migrate قبل از api اجرا می‌شود
+cd /opt/cognitest && sudo bash scripts/install.sh --domain example.ir --email ops@example.ir
 ```
 
 ## Desktop Player

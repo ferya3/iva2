@@ -81,7 +81,11 @@ services:
   # One-shot: migrations as the owner role, then exits.
   migrate:
     image: cognitest/api:${VERSION:-latest}
-    build: { context: ., dockerfile: infrastructure/docker/api.Dockerfile }
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
     environment: *api-env
     command:
       [
@@ -140,7 +144,7 @@ services:
       {
         context: .,
         dockerfile: infrastructure/docker/frontend.Dockerfile,
-        args: { APP: clinic-web },
+        args: { APP: clinic-web, NPM_REGISTRY: '${NPM_REGISTRY:-https://registry.npmjs.org}' },
       }
     restart: unless-stopped
     environment:
@@ -155,7 +159,7 @@ services:
       {
         context: .,
         dockerfile: infrastructure/docker/frontend.Dockerfile,
-        args: { APP: admin-web },
+        args: { APP: admin-web, NPM_REGISTRY: '${NPM_REGISTRY:-https://registry.npmjs.org}' },
       }
     restart: unless-stopped
     environment:
@@ -167,9 +171,11 @@ services:
   nginx:
     image: nginx:stable
     restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-cognitest.ir}
     ports: ['80:80', '443:443']
     volumes:
-      - ./infrastructure/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infrastructure/nginx/templates:/etc/nginx/templates:ro
       - ./infrastructure/nginx/internal.conf:/etc/nginx/conf.d/internal.conf:ro
       - ./infrastructure/nginx/snippets:/etc/nginx/snippets:ro
       - ${TLS_CERT_DIR:-./infrastructure/nginx/certs}:/etc/nginx/certs:ro

@@ -1,5 +1,5 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers as requestHeaders } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ApiError } from '@cognitest/shared-types';
 import { API_URL, TENANT_COOKIE, TOKEN_COOKIE } from './config';
@@ -49,6 +49,8 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (tenant && !options.tenantless) headers.set('X-Tenant-ID', tenant);
   if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+  const forwardedFor = await clientForwardedFor();
+  if (forwardedFor) headers.set('X-Forwarded-For', forwardedFor);
 
   const res = await fetch(url, {
     ...options,
@@ -66,6 +68,16 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     throw new ApiRequestError(res.status, body);
   }
   return body as T;
+}
+
+/**
+ * The API only sees this Next.js server; pass the browser's address along
+ * (the API trusts X-Forwarded-For from the private network only) so login
+ * throttling and audit logs work per client, not per panel instance.
+ */
+export async function clientForwardedFor(): Promise<string | null> {
+  const h = await requestHeaders();
+  return h.get('x-forwarded-for') ?? h.get('x-real-ip');
 }
 
 /** Converts an API failure into a form state for useActionState. */
