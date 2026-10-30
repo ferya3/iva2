@@ -1,4 +1,4 @@
-import { EventRecorder, MemorySink } from '@cognitest/event-recorder';
+import { EventRecorder, MemorySink, type EventSink } from '@cognitest/event-recorder';
 import type { SessionEvent, StimulusPresentedEvent } from '@cognitest/shared-types';
 import {
   AssessmentEngine,
@@ -70,13 +70,13 @@ export interface Harness {
 
 export function createHarness(
   protocol: ProtocolDefinition = SMALL_PROTOCOL,
-  opts: { seed?: number; hz?: number; audioLatency?: number; hooks?: EngineHooks } = {},
+  opts: { seed?: number; hz?: number; audioLatency?: number; hooks?: EngineHooks; sinks?: EventSink[] } = {},
 ): Harness {
   const display = new VirtualDisplay(opts.hz ?? 60);
   const input = new ScriptedInput();
   const env = new ScriptedEnvironment();
   const sink = new MemorySink();
-  const recorder = new EventRecorder({ clock: display.session, sinks: [sink] });
+  const recorder = new EventRecorder({ clock: display.session, sinks: [sink, ...(opts.sinks ?? [])] });
   const visual = new HeadlessVisualPort();
   const audio = new HeadlessAudioPort(opts.audioLatency ?? 0);
   const engine = new AssessmentEngine({

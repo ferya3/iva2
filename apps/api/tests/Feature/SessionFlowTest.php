@@ -175,6 +175,22 @@ class SessionFlowTest extends TestCase
         $this->postJson('/api/v1/player/join', ['code' => 'AAA-BBB-CCC', 'device_id' => 'b'])->assertStatus(422);
     }
 
+    public function test_a_run_started_offline_reports_its_seed(): void
+    {
+        [$tenant] = $this->actingAsClinic();
+        [$session, $token] = $this->createAndJoin();
+        $this->withToken($token)->postJson("/api/v1/sessions/{$session}/device-check", $this->device());
+        $this->withToken($token)->postJson("/api/v1/sessions/{$session}/calibration", $this->calibration());
+        $startedAt = now()->subMinutes(20)->toIso8601String();
+
+        $this->withToken($token)->postJson("/api/v1/sessions/{$session}/start", ['offline_seed' => 123456, 'offline_started_at' => $startedAt])
+            ->assertOk()->assertJsonPath('seed', 123456);
+
+        $this->getJson("/api/v1/sessions/{$session}")->assertJsonPath('data.started_at', $startedAt)
+            ->assertJsonFragment(['to' => 'RUNNING', 'reason' => 'offline start']);
+        $this->withToken($token)->postJson("/api/v1/sessions/{$session}/start", ['offline_seed' => 1])->assertStatus(422);
+    }
+
     public function test_expired_invites_are_swept(): void
     {
         [$tenant] = $this->actingAsClinic();

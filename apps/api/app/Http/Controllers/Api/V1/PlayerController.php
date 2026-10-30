@@ -13,6 +13,7 @@ use App\Http\Requests\DeviceCheckRequest;
 use App\Models\TestSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
  * Endpoints used by the desktop player. Authenticated by the per-session
@@ -55,8 +56,16 @@ class PlayerController extends Controller
 
     public function start(Request $request, SessionLifecycle $lifecycle): JsonResponse
     {
+        $data = $request->validate([
+            'offline_seed' => ['nullable', 'integer', 'between:0,4294967295', 'required_with:offline_started_at'],
+            'offline_started_at' => ['nullable', 'date', 'before_or_equal:now', 'after:-2 days', 'required_with:offline_seed'],
+        ]);
         $session = $this->session($request);
-        $seed = $lifecycle->start($session);
+        $seed = $lifecycle->start(
+            $session,
+            $data['offline_seed'] ?? null,
+            isset($data['offline_started_at']) ? Carbon::parse($data['offline_started_at']) : null,
+        );
 
         return response()->json(['status' => $session->status->value, 'seed' => $seed, 'started_at' => $session->started_at->toIso8601String()]);
     }

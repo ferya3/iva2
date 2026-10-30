@@ -8,6 +8,7 @@ use App\Models\CalibrationResult;
 use App\Models\DeviceProfile;
 use App\Models\TestSession;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -60,14 +61,20 @@ final class SessionLifecycle
         return [...$evaluation, 'status' => $session->status->value];
     }
 
-    /** Starts the run; the server chooses the seed so the trial order is not client-controlled. */
-    public function start(TestSession $session): int
+    /**
+     * Starts the run. Online, the server chooses the seed so the trial order
+     * is not client-controlled. A player that had to start offline reports
+     * the seed and start time it used; this is accepted (the run already
+     * happened) but recorded as an offline start in the state history.
+     */
+    public function start(TestSession $session, ?int $offlineSeed = null, ?CarbonInterface $offlineStartedAt = null): int
     {
-        $seed = random_int(0, 4294967295);
-        DB::transaction(function () use ($session, $seed) {
-            $this->states->transition($session, SessionStatus::Running, 'player', $session->id, null, [
+        $offline = $offlineSeed !== null;
+        $seed = $offlineSeed ?? random_int(0, 4294967295);
+        DB::transaction(function () use ($session, $seed, $offline, $offlineStartedAt) {
+            $this->states->transition($session, SessionStatus::Running, 'player', $session->id, $offline ? 'offline start' : null, [
                 'seed' => $seed,
-                'started_at' => now(),
+                'started_at' => $offline ? $offlineStartedAt : now(),
             ]);
             $this->auth->revokeInvites($session);
         });

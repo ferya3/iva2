@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+@import '@cognitest/ui/styles.css';
+
+@source '../../../packages/ui/src';
+
+:root {
+  --font-vazirmatn: 'Vazirmatn';
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  user-select: none;
+}
+
+/* The stimulus surface: pure black, no cursor, no transitions. */
+.test-surface {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  cursor: none;
+}
