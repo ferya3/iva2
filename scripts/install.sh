@@ -12,6 +12,7 @@
 # code is updated, images are rebuilt and migrations are applied. Switching
 # from --ip to --domain later is a re-run with the new option.
 set -Eeuo pipefail
+ORIG_ARGS=("$@")
 
 REPO_URL="https://github.com/ferya3/iva2.git"
 BRANCH="claude/kind-maxwell-ibgtgr"
@@ -29,6 +30,7 @@ SELF_SIGNED=0
 DEMO=0
 SKIP_DOCKER=0
 NO_BUILD=0
+NO_UPDATE=0
 
 usage() {
   cat <<'USAGE'
@@ -49,6 +51,7 @@ Usage: install.sh (--domain DOMAIN | --ip [ADDRESS]) [options]
   --repo URL --branch NAME Source repository (private repo: https://<token>@github.com/…)
   --skip-docker-install    Docker Engine + Compose v2 are already installed
   --no-build               Use images already present locally (cognitest/*:VERSION)
+  --no-update              Do not pull the latest code before installing
 USAGE
 }
 
@@ -71,6 +74,7 @@ while [[ $# -gt 0 ]]; do
     --branch) BRANCH="$2"; shift 2 ;;
     --skip-docker-install) SKIP_DOCKER=1; shift ;;
     --no-build) NO_BUILD=1; shift ;;
+    --no-update) NO_UPDATE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
   esac
@@ -154,6 +158,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo
 if [[ -f "$SCRIPT_DIR/../docker-compose.yml" ]]; then
   INSTALL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
   log "Using checkout at $INSTALL_DIR"
+  # Run from inside an installation: pull the latest code first and restart
+  # with the new installer (a running bash keeps executing the old file).
+  if [[ $NO_UPDATE -eq 0 && -d "$INSTALL_DIR/.git" ]] && git -C "$INSTALL_DIR" remote get-url origin >/dev/null 2>&1; then
+    if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=no)" ]]; then
+      warn "Local changes in $INSTALL_DIR; skipping the code update (use --no-update to silence)."
+    else
+      log "Checking for updates ($BRANCH)"
+      git -C "$INSTALL_DIR" fetch --quiet origin "$BRANCH"
+      if [[ "$(git -C "$INSTALL_DIR" rev-parse HEAD)" != "$(git -C "$INSTALL_DIR" rev-parse FETCH_HEAD)" ]]; then
+        git -C "$INSTALL_DIR" checkout --quiet -B "$BRANCH" FETCH_HEAD
+        log "Updated to $(git -C "$INSTALL_DIR" log -1 --format='%h %s'); restarting the installer"
+        trap - ERR
+        exec bash "$INSTALL_DIR/scripts/install.sh" "${ORIG_ARGS[@]}" --no-update
+      fi
+    fi
+  fi
 elif [[ -d "$INSTALL_DIR/.git" ]]; then
   log "Updating $INSTALL_DIR"
   git -C "$INSTALL_DIR" fetch --quiet origin "$BRANCH"
