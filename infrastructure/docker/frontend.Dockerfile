@@ -1,5 +1,9 @@
 # Next.js panels (standalone output). Build context: repository root.
 #   docker build -f infrastructure/docker/frontend.Dockerfile --build-arg APP=clinic-web -t cognitest/clinic-web .
+#
+# Layer order is chosen for fast updates: npm packages are downloaded in a
+# layer that depends only on the lockfile, and each panel copies only its own
+# sources, so a change elsewhere in the repository does not rebuild it.
 
 ARG NODE_VERSION=22
 ARG NPM_REGISTRY=https://registry.npmjs.org
@@ -11,9 +15,13 @@ ENV NEXT_TELEMETRY_DISABLED=1 ELECTRON_SKIP_BINARY_DOWNLOAD=1 COREPACK_ENABLE_DO
     NPM_CONFIG_REGISTRY=${NPM_REGISTRY} COREPACK_NPM_REGISTRY=${NPM_REGISTRY}
 RUN corepack enable
 WORKDIR /repo
-COPY . .
-RUN pnpm install --frozen-lockfile --filter "@cognitest/${APP}..." \
- && pnpm --filter @cognitest/${APP} build
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch --frozen-lockfile
+COPY tsconfig.base.json turbo.json ./
+COPY packages/ packages/
+COPY apps/${APP}/ apps/${APP}/
+RUN pnpm install --offline --frozen-lockfile --filter "@cognitest/${APP}..." \
+ && pnpm --filter "@cognitest/${APP}" build
 
 FROM node:${NODE_VERSION}-trixie-slim AS runtime
 ARG APP

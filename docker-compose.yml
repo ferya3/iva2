@@ -99,6 +99,7 @@ services:
     build:
       context: .
       dockerfile: infrastructure/docker/api.Dockerfile
+      target: api
       args:
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
         DEBIAN_MIRROR: ${DEBIAN_MIRROR:-}
@@ -135,8 +136,11 @@ services:
     image: cognitest/worker:${VERSION:-latest}
     build:
       context: .
-      dockerfile: infrastructure/docker/worker.Dockerfile
-      args: { API_IMAGE: 'cognitest/api:${VERSION:-latest}', DEBIAN_MIRROR: '${DEBIAN_MIRROR:-}' }
+      dockerfile: infrastructure/docker/api.Dockerfile
+      target: worker
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-}
     restart: unless-stopped
     environment: *api-env
     volumes: [reports:/var/www/api/storage/app/private]

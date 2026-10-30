@@ -44,7 +44,8 @@ Usage: install.sh (--domain DOMAIN | --ip [ADDRESS]) [options]
   --admin-ip IP[,IP…]      Addresses allowed to open the admin panel (default: your SSH client IP)
   --registry-mirror URL    Docker Hub mirror (needed on servers in Iran)
   --npm-registry URL       npm mirror used while building images
-  --apt-mirror URL         Debian mirror base for image builds (URL/debian, URL/debian-security)
+  --apt-mirror URL|off     Debian mirror base for image builds (URL/debian, URL/debian-security);
+                           only for servers inside Iran — it is remembered, 'off' removes it
   --self-signed            Domain mode without Let's Encrypt
   --demo                   Seed a demo clinic (owner@demo.cognitest.ir / password)
   --dir PATH               Install directory (default /opt/cognitest)
@@ -235,7 +236,9 @@ set_env PUBLIC_API_URL "${API_URL%/api/v1}"
 set_env PUBLIC_CLINIC_URL "$CLINIC_URL"
 set_env PUBLIC_ADMIN_URL "$ADMIN_URL"
 if [[ -n "$NPM_REGISTRY" ]]; then set_env NPM_REGISTRY "$NPM_REGISTRY"; fi
-if [[ -n "$APT_MIRROR" ]]; then set_env DEBIAN_MIRROR "$APT_MIRROR"; fi
+if [[ "$APT_MIRROR" == "off" ]]; then set_env DEBIAN_MIRROR ""; elif [[ -n "$APT_MIRROR" ]]; then set_env DEBIAN_MIRROR "$APT_MIRROR"; fi
+saved_mirror="$(sed -n 's/^DEBIAN_MIRROR=//p' "$ENV_FILE")"
+if [[ -n "$saved_mirror" ]]; then log "Debian mirror for builds: $saved_mirror (remove with --apt-mirror off)"; fi
 chmod 600 "$ENV_FILE"
 
 # --------------------------------------------------------------- resources --
@@ -329,29 +332,32 @@ if [[ $NO_BUILD -eq 0 ]]; then
   mkdir -p "$BUILD_LOGS"
   # One image at a time (readable output), retried: network failures are
   # usually transient and BuildKit's cache keeps every finished step.
-  build_image() {
-    local svc="$1" label="$2" log="$BUILD_LOGS/build-$1.log" attempt
+  build_image() { # label service…
+    local label="$1"; shift
+    local log="$BUILD_LOGS/build-$1.log" attempt
     for attempt in 1 2 3; do
       log "Building $label (attempt $attempt/3) — full log: $log"
-      if dc --progress=plain build "$svc" 2>&1 | tee "$log" \
-          | { grep --line-buffered -E '^#[0-9]+ \[[^]]+ [0-9]+/[0-9]+\]' | cut -c1-110 || true; }; then
+      if dc --progress=plain build "$@" 2>&1 | tee "$log" \
+          | { grep --line-buffered -E '^#[0-9]+ \[[^]]+ [0-9]+/[0-9]+\]' | grep --line-buffered -v CACHED | cut -c1-110 || true; }; then
         return 0
       fi
       warn "Building $label failed. Error lines:"
       grep -E 'ERROR|E: |Err:|ERR_|error ' "$log" | grep -v '^#[0-9]* \[' | tail -12 >&2 || true
       sleep 10
     done
-    case "$svc" in
+    case "$1" in
       migrate|horizon) hint="Debian downloads: rerun with --apt-mirror URL (and --registry-mirror URL)" ;;
       *) hint="npm downloads: rerun with --npm-registry URL" ;;
     esac
     die "Could not build $label after 3 attempts. $hint. Full log: $log"
   }
   STEP="building images"
-  build_image migrate "API image"            # cognitest/api — the worker image is built on top of it
-  build_image horizon "worker image (scoring + PDF)"
-  build_image clinic-web "clinic panel"
-  build_image admin-web "admin panel"
+  # API and worker share their build stages, so they are built in one go.
+  build_image "API and worker images" migrate horizon
+  build_image "clinic panel" clinic-web
+  build_image "admin panel" admin-web
+  # Old image layers from previous builds pile up on disk otherwise.
+  docker image prune -f >/dev/null 2>&1 || true
 fi
 
 STEP="starting services"
