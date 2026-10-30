@@ -26,6 +26,12 @@
 curl -fsSL https://raw.githubusercontent.com/ferya3/iva2/claude/kind-maxwell-ibgtgr/scripts/install.sh | sudo bash -s -- --domain example.ir --email ops@example.ir
 ```
 
+بدون دامنه (روی IP سرور، با گواهی self-signed):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ferya3/iva2/claude/kind-maxwell-ibgtgr/scripts/install.sh | sudo bash -s -- --ip
+```
+
 جزئیات، گزینه‌ها (از جمله آینه Docker برای سرورهای داخل ایران) و نسخه مخزن خصوصی: [docs/operations/deployment.md](docs/operations/deployment.md).
 
 ## شروع سریع (توسعه)

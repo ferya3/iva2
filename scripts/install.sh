@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
 # Cognitest — one-command installer for Ubuntu 24.04 (single host, Docker Compose).
 #
+# With a domain (Let's Encrypt):
 #   curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/<branch>/scripts/install.sh \
 #     | sudo bash -s -- --domain example.ir --email ops@example.ir
 #
+# Without a domain yet (server IP, self-signed certificate):
+#   curl -fsSL …/scripts/install.sh | sudo bash -s -- --ip
+#
 # Re-running is safe: secrets, certificates and the admin account are kept;
-# code is updated, images are rebuilt and migrations are applied.
+# code is updated, images are rebuilt and migrations are applied. Switching
+# from --ip to --domain later is a re-run with the new option.
 set -Eeuo pipefail
 
 REPO_URL="https://github.com/ferya3/iva2.git"
 BRANCH="claude/kind-maxwell-ibgtgr"
 INSTALL_DIR="/opt/cognitest"
 DOMAIN=""
+IP=""
+IP_MODE=0
 EMAIL=""
 ADMIN_EMAIL=""
 ADMIN_IPS=""
@@ -24,15 +31,17 @@ NO_BUILD=0
 
 usage() {
   cat <<'USAGE'
-Usage: install.sh --domain DOMAIN [options]
+Usage: install.sh (--domain DOMAIN | --ip [ADDRESS]) [options]
 
-  --domain DOMAIN          Base domain; serves api.DOMAIN, clinic.DOMAIN, admin.DOMAIN (required)
-  --email EMAIL            Let's Encrypt account e-mail (omit together with --self-signed)
-  --admin-email EMAIL      First platform administrator (default: admin@DOMAIN)
-  --admin-ip IP[,IP…]      Addresses allowed to open admin.DOMAIN (default: your SSH client IP)
-  --registry-mirror URL    Docker Hub mirror, e.g. for servers in Iran
+  --domain DOMAIN          Serve api.DOMAIN, clinic.DOMAIN and admin.DOMAIN
+  --ip [ADDRESS]           No domain yet: https://IP (clinic + /api/v1) and https://IP:8443 (admin),
+                           self-signed certificate; ADDRESS defaults to the detected public IPv4
+  --email EMAIL            Let's Encrypt account e-mail (domain mode)
+  --admin-email EMAIL      First platform administrator (default: admin@DOMAIN / admin@cognitest.local)
+  --admin-ip IP[,IP…]      Addresses allowed to open the admin panel (default: your SSH client IP)
+  --registry-mirror URL    Docker Hub mirror (needed on servers in Iran)
   --npm-registry URL       npm mirror used while building images
-  --self-signed            Skip Let's Encrypt and use a self-signed certificate
+  --self-signed            Domain mode without Let's Encrypt
   --demo                   Seed a demo clinic (owner@demo.cognitest.ir / password)
   --dir PATH               Install directory (default /opt/cognitest)
   --repo URL --branch NAME Source repository (private repo: https://<token>@github.com/…)
@@ -44,6 +53,9 @@ USAGE
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="$2"; shift 2 ;;
+    --ip)
+      IP_MODE=1
+      if [[ $# -gt 1 && "$2" != --* ]]; then IP="$2"; shift 2; else shift; fi ;;
     --email) EMAIL="$2"; shift 2 ;;
     --admin-email) ADMIN_EMAIL="$2"; shift 2 ;;
     --admin-ip) ADMIN_IPS="$2"; shift 2 ;;
@@ -67,13 +79,37 @@ die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 trap 'die "Installation failed at line $LINENO. Fix the error above and run the same command again."' ERR
 
 [[ $EUID -eq 0 ]] || die "Run as root (sudo)."
-[[ -n "$DOMAIN" ]] || { usage; die "--domain is required."; }
-[[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || die "Invalid domain: $DOMAIN"
-[[ $SELF_SIGNED -eq 1 || -n "$EMAIL" ]] || die "Pass --email for Let's Encrypt, or --self-signed."
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@$DOMAIN}"
 if [[ -r /etc/os-release ]]; then
   . /etc/os-release
   [[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "24.04" ]] || warn "Tested on Ubuntu 24.04; detected ${PRETTY_NAME:-unknown}."
+fi
+
+# ------------------------------------------------------------------ layout --
+if [[ $IP_MODE -eq 1 ]]; then
+  [[ -z "$DOMAIN" ]] || die "Use either --domain or --ip, not both."
+  if [[ -z "$IP" ]]; then
+    IP="$(curl -fs4 --max-time 8 https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')"
+  fi
+  [[ "$IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || die "Could not determine the server IPv4 address; pass it: --ip 1.2.3.4"
+  SELF_SIGNED=1
+  NGINX_MODE=ip
+  PUBLIC_HOST="$IP"
+  API_URL="https://$IP/api/v1"
+  CLINIC_URL="https://$IP"
+  ADMIN_URL="https://$IP:8443"
+  ADMIN_EMAIL="${ADMIN_EMAIL:-admin@cognitest.local}"
+  CERT_ID="ip:$IP"; CERT_CN="$IP"; CERT_SAN="IP:$IP"
+else
+  [[ -n "$DOMAIN" ]] || { usage; die "Pass --domain DOMAIN, or --ip to run on the server address."; }
+  [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || die "Invalid domain: $DOMAIN"
+  [[ $SELF_SIGNED -eq 1 || -n "$EMAIL" ]] || die "Pass --email for Let's Encrypt, or --self-signed."
+  NGINX_MODE=domain
+  PUBLIC_HOST="api.$DOMAIN"
+  API_URL="https://api.$DOMAIN/api/v1"
+  CLINIC_URL="https://clinic.$DOMAIN"
+  ADMIN_URL="https://admin.$DOMAIN"
+  ADMIN_EMAIL="${ADMIN_EMAIL:-admin@$DOMAIN}"
+  CERT_ID="domain:$DOMAIN"; CERT_CN="$DOMAIN"; CERT_SAN="DNS:api.$DOMAIN,DNS:clinic.$DOMAIN,DNS:admin.$DOMAIN"
 fi
 
 # ---------------------------------------------------------------- packages --
@@ -134,7 +170,6 @@ if [[ ! -f "$ENV_FILE" ]]; then
   log "Generating secrets in .env.production"
   umask 077
   cat >"$ENV_FILE" <<EOF
-DOMAIN=$DOMAIN
 VERSION=latest
 APP_KEY=base64:$(openssl rand -base64 32)
 POSTGRES_SUPERUSER_PASSWORD=$(openssl rand -hex 24)
@@ -148,36 +183,43 @@ EOF
 else
   log "Keeping existing secrets in .env.production"
 fi
-set_env DOMAIN "$DOMAIN"
-[[ -n "$NPM_REGISTRY" ]] && set_env NPM_REGISTRY "$NPM_REGISTRY"
+set_env DOMAIN "${DOMAIN:-cognitest.local}"
+set_env NGINX_MODE "$NGINX_MODE"
+set_env PUBLIC_HOST "$PUBLIC_HOST"
+set_env PUBLIC_API_URL "${API_URL%/api/v1}"
+set_env PUBLIC_CLINIC_URL "$CLINIC_URL"
+set_env PUBLIC_ADMIN_URL "$ADMIN_URL"
+if [[ -n "$NPM_REGISTRY" ]]; then set_env NPM_REGISTRY "$NPM_REGISTRY"; fi
 chmod 600 "$ENV_FILE"
 
 # ------------------------------------------------------------- admin access --
 if [[ -z "$ADMIN_IPS" ]]; then ADMIN_IPS="$(awk '{print $1}' <<<"${SSH_CLIENT:-}")"; fi
 ALLOW_FILE="infrastructure/nginx/snippets/admin-allowlist.local.conf"
 {
-  echo "# Generated by scripts/install.sh — addresses allowed to open admin.$DOMAIN"
+  echo "# Generated by scripts/install.sh — addresses allowed to open $ADMIN_URL"
   IFS=',' read -ra ips <<<"$ADMIN_IPS"
   for ip in "${ips[@]}"; do [[ -n "$ip" ]] && echo "allow $ip;"; done
 } >"$ALLOW_FILE"
-[[ -n "$ADMIN_IPS" ]] || warn "admin.$DOMAIN is closed to everyone; rerun with --admin-ip to open it."
+[[ -n "$ADMIN_IPS" ]] || warn "$ADMIN_URL is closed to everyone; rerun with --admin-ip to open it."
 
 # ------------------------------------------------------------- certificates --
 CERT_DIR="$INSTALL_DIR/infrastructure/nginx/certs"
 mkdir -p "$CERT_DIR"
-HOSTS=(api clinic admin)
 self_signed() {
-  log "Creating a self-signed certificate"
-  openssl req -x509 -nodes -newkey rsa:2048 -days 825 -subj "/CN=$DOMAIN" \
-    -addext "subjectAltName=DNS:api.$DOMAIN,DNS:clinic.$DOMAIN,DNS:admin.$DOMAIN" \
+  log "Creating a self-signed certificate for $CERT_CN"
+  openssl req -x509 -nodes -newkey rsa:2048 -days 825 -subj "/CN=$CERT_CN" \
+    -addext "subjectAltName=$CERT_SAN" -addext "extendedKeyUsage=serverAuth" \
     -keyout "$CERT_DIR/privkey.pem" -out "$CERT_DIR/fullchain.pem" >/dev/null 2>&1
+  echo "$CERT_ID" >"$CERT_DIR/.identity"
 }
 if [[ $SELF_SIGNED -eq 1 ]]; then
-  [[ -s "$CERT_DIR/fullchain.pem" ]] || self_signed
+  # Re-issue only when the address/domain changed since the last run.
+  if [[ ! -s "$CERT_DIR/fullchain.pem" || "$(cat "$CERT_DIR/.identity" 2>/dev/null)" != "$CERT_ID" ]]; then self_signed; fi
 else
+  HOSTS=(api clinic admin)
   LIVE="/etc/letsencrypt/live/api.$DOMAIN"
   if [[ ! -d "$LIVE" ]]; then
-    log "Requesting Let's Encrypt certificate (DNS of ${HOSTS[*]/%/.$DOMAIN} must point here)"
+    log "Requesting Let's Encrypt certificate (DNS of api/clinic/admin.$DOMAIN must point here)"
     dc stop nginx >/dev/null 2>&1 || true
     args=(); for h in "${HOSTS[@]}"; do args+=(-d "$h.$DOMAIN"); done
     if ! certbot certonly --standalone --non-interactive --agree-tos -m "$EMAIL" --cert-name "api.$DOMAIN" "${args[@]}"; then
@@ -187,6 +229,7 @@ else
   fi
   if [[ -d "$LIVE" ]]; then
     cp -L "$LIVE/fullchain.pem" "$LIVE/privkey.pem" "$CERT_DIR/"
+    echo "letsencrypt:$DOMAIN" >"$CERT_DIR/.identity"
     # Renewal uses the standalone authenticator on port 80: stop nginx, copy, start.
     hooks=/etc/letsencrypt/renewal-hooks
     mkdir -p "$hooks/pre" "$hooks/deploy" "$hooks/post"
@@ -200,8 +243,8 @@ chmod 600 "$CERT_DIR/privkey.pem"
 
 # ---------------------------------------------------------------- firewall --
 if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
-  log "Opening ports 80/443 in ufw"
-  ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null
+  log "Opening ports 80/443/8443 in ufw"
+  ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null && ufw allow 8443/tcp >/dev/null
 fi
 
 # ------------------------------------------------------------ build & start --
@@ -213,6 +256,7 @@ fi
 
 log "Starting services and applying migrations"
 dc up -d --remove-orphans --no-build || { dc logs migrate | tail -40; die "Services failed to start."; }
+state="starting 0"
 for _ in $(seq 1 90); do
   state="$(docker inspect -f '{{.State.Status}} {{.State.ExitCode}}' "$(dc ps -aq migrate)" 2>/dev/null || echo 'starting 0')"
   [[ "$state" == "exited 0" ]] && break
@@ -220,9 +264,10 @@ for _ in $(seq 1 90); do
   sleep 2
 done
 [[ "$state" == "exited 0" ]] || die "Migrations did not finish in time; see: docker compose logs migrate"
-dc up -d --no-build   # services that waited for migrate
+# Services that waited for migrate; --force-recreate applies changed URLs / layout.
+dc up -d --no-build --force-recreate api horizon scheduler clinic-web admin-web >/dev/null
 # Re-render the nginx template and pick up new certificates / allow-list.
-dc restart nginx >/dev/null
+dc up -d --no-build --force-recreate nginx >/dev/null
 
 # ------------------------------------------------------------ admin account --
 CRED_FILE="/root/cognitest-admin.txt"
@@ -231,7 +276,7 @@ if [[ ! -f "$CRED_FILE" ]]; then
   out="$(dc exec -T api php artisan cognitest:create-admin "$ADMIN_EMAIL")"
   password="$(sed -n 's/^Password: //p' <<<"$out")"
   umask 077
-  printf 'URL: https://admin.%s\nE-mail: %s\nPassword: %s\n' "$DOMAIN" "$ADMIN_EMAIL" "$password" >"$CRED_FILE"
+  printf 'E-mail: %s\nPassword: %s\n' "$ADMIN_EMAIL" "$password" >"$CRED_FILE"
   umask 022
 fi
 
@@ -241,22 +286,33 @@ if [[ $DEMO -eq 1 ]]; then
 fi
 
 # ------------------------------------------------------------------- check --
-sleep 3
-code="$(curl -sk --noproxy '*' -o /dev/null -w '%{http_code}' --resolve "api.$DOMAIN:443:127.0.0.1" "https://api.$DOMAIN/api/v1/auth/me" || true)"
-[[ "$code" == "401" ]] && log "API is answering (https://api.$DOMAIN)" || warn "API health check returned HTTP $code; see: docker compose logs api nginx"
+host="${API_URL#https://}"; host="${host%%/*}"
+code=000
+for _ in $(seq 1 15); do
+  code="$(curl -sk --noproxy '*' -o /dev/null -w '%{http_code}' --resolve "$host:443:127.0.0.1" "$API_URL/auth/me" || true)"
+  [[ "$code" == "401" ]] && break
+  sleep 2
+done
+if [[ "$code" == "401" ]]; then log "API is answering ($API_URL)"; else warn "API health check returned HTTP $code; see: docker compose logs api nginx"; fi
+FINGERPRINT="sha256/$(openssl x509 -in "$CERT_DIR/fullchain.pem" -outform der | openssl dgst -sha256 -binary | base64)"
 
 trap - ERR
-cat <<EOF
-
-  Cognitest is installed in $INSTALL_DIR
-
-  Clinic panel : https://clinic.$DOMAIN
-  Admin panel  : https://admin.$DOMAIN   (allowed from: ${ADMIN_IPS:-nobody})
-  API          : https://api.$DOMAIN/api/v1
-  Admin login  : see $CRED_FILE
-$( [[ $DEMO -eq 1 ]] && echo "  Demo clinic  : owner@demo.cognitest.ir / password" )
-
-  DNS: create A records for api.$DOMAIN, clinic.$DOMAIN and admin.$DOMAIN pointing to this server.
-  Desktop player: build it with MAIN_VITE_API_URL=https://api.$DOMAIN/api/v1 (see docs/operations/deployment.md).
-  Logs: docker compose --project-directory $INSTALL_DIR --env-file $ENV_FILE logs -f
-EOF
+echo
+echo "  Cognitest is installed in $INSTALL_DIR"
+echo
+echo "  Clinic panel : $CLINIC_URL"
+echo "  Admin panel  : $ADMIN_URL   (allowed from: ${ADMIN_IPS:-nobody})"
+echo "  API          : $API_URL"
+echo "  Admin login  : $CRED_FILE"
+if [[ $DEMO -eq 1 ]]; then echo "  Demo clinic  : owner@demo.cognitest.ir / password"; fi
+echo
+if [[ $SELF_SIGNED -eq 1 ]]; then
+  echo "  The certificate is self-signed: browsers warn once — choose Advanced → Proceed."
+  echo "  Desktop player pins it instead of trusting it blindly; build the player with:"
+  echo "    MAIN_VITE_API_URL=$API_URL"
+  echo "    MAIN_VITE_API_CERT_SHA256=$FINGERPRINT"
+  if [[ $IP_MODE -eq 1 ]]; then echo "  Move to a domain later: re-run with --domain DOMAIN --email EMAIL."; fi
+else
+  echo "  Desktop player: build it with MAIN_VITE_API_URL=$API_URL"
+fi
+echo "  Logs: docker compose --project-directory $INSTALL_DIR --env-file $ENV_FILE logs -f"

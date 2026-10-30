@@ -9,9 +9,10 @@ x-api-env: &api-env
   APP_ENV: production
   APP_DEBUG: 'false'
   APP_KEY: ${APP_KEY:?APP_KEY is required}
-  APP_URL: https://api.${DOMAIN:-cognitest.ir}
-  CLINIC_WEB_URL: https://clinic.${DOMAIN:-cognitest.ir}
-  ADMIN_WEB_URL: https://admin.${DOMAIN:-cognitest.ir}
+  # Public URLs; scripts/install.sh sets them for domain or IP mode.
+  APP_URL: ${PUBLIC_API_URL:-https://api.cognitest.ir}
+  CLINIC_WEB_URL: ${PUBLIC_CLINIC_URL:-https://clinic.cognitest.ir}
+  ADMIN_WEB_URL: ${PUBLIC_ADMIN_URL:-https://admin.cognitest.ir}
   DB_CONNECTION: pgsql
   DB_HOST: postgres
   DB_DATABASE: cognitest
@@ -173,9 +174,10 @@ services:
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:-cognitest.ir}
-    ports: ['80:80', '443:443']
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+    ports: ['80:80', '443:443', '8443:8443']
     volumes:
-      - ./infrastructure/nginx/templates:/etc/nginx/templates:ro
+      - ./infrastructure/nginx/templates/${NGINX_MODE:-domain}:/etc/nginx/templates:ro
       - ./infrastructure/nginx/internal.conf:/etc/nginx/conf.d/internal.conf:ro
       - ./infrastructure/nginx/snippets:/etc/nginx/snippets:ro
       - ${TLS_CERT_DIR:-./infrastructure/nginx/certs}:/etc/nginx/certs:ro

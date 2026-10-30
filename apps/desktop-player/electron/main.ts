@@ -1,10 +1,19 @@
-import { app, BrowserWindow, dialog, ipcMain, safeStorage } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  net,
+  safeStorage,
+  session as electronSession,
+} from 'electron';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { ENGINE_VERSION } from '@cognitest/assessment-engine';
 import type { SessionEvent } from '@cognitest/shared-types';
 import { ApiFailure, PlayerApiClient } from './api-client';
+import { createVerifyProc, parsePins } from './certificate-pin';
 import { collectDeviceInfo } from './device-info';
 import {
   IPC,
@@ -25,6 +34,10 @@ const API_URL =
   process.env.COGNITEST_API_URL ??
   import.meta.env.MAIN_VITE_API_URL ??
   'https://api.cognitest.ir/api/v1';
+// Self-signed server (IP mode): pin its certificate instead of trusting any.
+const API_CERT_PINS = parsePins(
+  process.env.COGNITEST_API_CERT_SHA256 ?? import.meta.env.MAIN_VITE_API_CERT_SHA256,
+);
 const PROTOCOL = 'cognitest';
 const isDev = !app.isPackaged;
 
@@ -153,7 +166,19 @@ app.whenReady().then(async () => {
     new DatabaseSync(join(userData, 'outbox.sqlite')),
     new PayloadCipher(secure.outboxKey()),
   );
-  const api = new PlayerApiClient(API_URL, fetch, 20_000, `CognitestPlayer/${app.getVersion()}`);
+  if (API_CERT_PINS.length > 0) {
+    electronSession.defaultSession.setCertificateVerifyProc(
+      createVerifyProc(new URL(API_URL).hostname, API_CERT_PINS),
+    );
+  }
+  // Chromium's network stack: honours system proxy settings and the Windows
+  // certificate store (clinic networks), and the pinning above.
+  const api = new PlayerApiClient(
+    API_URL,
+    net.fetch.bind(net) as typeof fetch,
+    20_000,
+    `CognitestPlayer/${app.getVersion()}`,
+  );
   api.setToken(secure.getToken());
 
   const emit = (s: UploadState) => win?.webContents.send(IPC.uploadState, s);
