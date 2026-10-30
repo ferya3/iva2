@@ -46,3 +46,22 @@ export function isTerminal(status: SessionStatus): boolean {
 
 /** Statuses during which the desktop player may upload raw events. */
 export const EVENT_INGEST_STATUSES: readonly SessionStatus[] = ['RUNNING', 'UPLOADING'];
+
+/** Persian labels and UI tone for every status (panels and player). */
+export const SESSION_STATUS_META: Readonly<
+  Record<SessionStatus, { fa: string; en: string; tone: 'neutral' | 'info' | 'progress' | 'success' | 'warning' | 'danger' }>
+> = {
+  CREATED: { fa: 'ایجاد شده', en: 'Created', tone: 'neutral' },
+  INVITED: { fa: 'دعوت ارسال شده', en: 'Invited', tone: 'info' },
+  DEVICE_CHECK: { fa: 'بررسی تجهیزات', en: 'Device check', tone: 'progress' },
+  CALIBRATION: { fa: 'کالیبراسیون', en: 'Calibration', tone: 'progress' },
+  READY: { fa: 'آماده اجرا', en: 'Ready', tone: 'progress' },
+  RUNNING: { fa: 'در حال اجرا', en: 'Running', tone: 'progress' },
+  UPLOADING: { fa: 'در حال ارسال داده', en: 'Uploading', tone: 'progress' },
+  COMPLETED: { fa: 'تکمیل‌شده (در حال تحلیل)', en: 'Completed', tone: 'info' },
+  VALIDATED: { fa: 'تحلیل‌شده', en: 'Validated', tone: 'success' },
+  REPORTED: { fa: 'گزارش صادر شده', en: 'Reported', tone: 'success' },
+  INVALID: { fa: 'نامعتبر', en: 'Invalid', tone: 'danger' },
+  CANCELLED: { fa: 'لغو شده', en: 'Cancelled', tone: 'neutral' },
+  EXPIRED: { fa: 'منقضی شده', en: 'Expired', tone: 'warning' },
+};

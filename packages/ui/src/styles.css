@@ -1,0 +1,32 @@
+/*
+ * Design tokens (Tailwind v4). Import from an app stylesheet after
+ * `@import "tailwindcss";` and add `@source` for this package.
+ */
+@theme {
+  --font-sans: var(--font-vazirmatn), Tahoma, 'Segoe UI', sans-serif;
+  --color-brand-50: oklch(0.98 0.02 180);
+  --color-brand-100: oklch(0.95 0.05 180);
+  --color-brand-500: oklch(0.6 0.11 182);
+  --color-brand-600: oklch(0.52 0.1 184);
+  --color-brand-700: oklch(0.45 0.085 185);
+  --color-brand-900: oklch(0.3 0.05 190);
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+  /* Latin snippets (codes, emails) inside RTL text */
+  .ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}

@@ -13,3 +13,5 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 apps/desktop-player/release/
+*.tsbuildinfo
+next-env.d.ts

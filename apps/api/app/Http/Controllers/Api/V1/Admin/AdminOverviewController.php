@@ -22,6 +22,8 @@ class AdminOverviewController extends Controller
             ->where('created_at', '>=', now()->subDays(29)->startOfDay())
             ->selectRaw("to_char(created_at, 'YYYY-MM-DD') as day, count(*) as n")
             ->groupBy('day')->orderBy('day')->pluck('n', 'day');
+        // Dense series: every one of the last 30 days, zero when idle.
+        $days = collect(range(29, 0))->mapWithKeys(fn ($i) => [now()->subDays($i)->format('Y-m-d') => (int) ($perDay[now()->subDays($i)->format('Y-m-d')] ?? 0)]);
 
         return response()->json([
             'tenants' => Tenant::query()->count(),
@@ -29,7 +31,7 @@ class AdminOverviewController extends Controller
             'users' => User::query()->count(),
             'sessions' => $byStatus->sum(),
             'sessions_by_status' => collect(SessionStatus::cases())->mapWithKeys(fn ($s) => [$s->value => (int) ($byStatus[$s->value] ?? 0)]),
-            'sessions_per_day' => $perDay,
+            'sessions_per_day' => $days,
             'active_subscriptions' => Subscription::query()->whereIn('status', ['active', 'trialing'])->count(),
         ]);
     }
