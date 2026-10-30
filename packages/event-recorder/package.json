@@ -1,0 +1,29 @@
+{
+  "name": "@cognitest/event-recorder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Append-only event recording, local outbox and resilient batch sync",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@cognitest/shared-types": "workspace:*",
+    "@cognitest/timing-core": "workspace:*",
+    "@cognitest/validation": "workspace:*"
+  },
+  "peerDependencies": {
+    "vitest": "*"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  }
+}

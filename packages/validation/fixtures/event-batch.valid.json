@@ -1,0 +1,55 @@
+{
+  "session_id": "0b5c1b9e-6c1e-4b7a-9b52-6a3e1f2d9c11",
+  "batch_id": "6f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+  "engine_version": "1.0.0",
+  "events": [
+    {
+      "sequence": 1,
+      "type": "session_started",
+      "timestamp_ms": 0,
+      "engine_version": "1.0.0",
+      "protocol_key": "demo-cpt",
+      "protocol_version": "1.0.0",
+      "seed": 42,
+      "wall_clock_iso": "2026-10-30T08:00:00.000+03:30"
+    },
+    {
+      "sequence": 2,
+      "type": "block_started",
+      "timestamp_ms": 12.5,
+      "block_index": 0,
+      "block_key": "main"
+    },
+    {
+      "sequence": 3,
+      "type": "stimulus_presented",
+      "timestamp_ms": 1050.25,
+      "trial_index": 0,
+      "block_index": 0,
+      "stimulus_id": "circle-green",
+      "modality": "visual",
+      "is_target": true,
+      "planned_time_ms": 1050,
+      "actual_time_ms": 1050.25,
+      "frame_number": 63,
+      "presentation_status": "on_time"
+    },
+    {
+      "sequence": 4,
+      "type": "response",
+      "timestamp_ms": 1483.1,
+      "received_time_ms": 1482.6,
+      "input": "keyboard",
+      "key": "Space",
+      "stimulus_sequence": 3,
+      "reaction_time_ms": 432.35,
+      "validity": "valid"
+    },
+    {
+      "sequence": 5,
+      "type": "stimulus_cleared",
+      "timestamp_ms": 1550.4,
+      "trial_index": 0
+    }
+  ]
+}

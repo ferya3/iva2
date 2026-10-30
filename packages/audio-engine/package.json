@@ -1,0 +1,16 @@
+{
+  "name": "@cognitest/audio-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web Audio implementation of the assessment engine audio port",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {"@cognitest/assessment-engine": "workspace:*", "@cognitest/timing-core": "workspace:*"}
+}

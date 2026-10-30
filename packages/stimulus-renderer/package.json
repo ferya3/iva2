@@ -1,0 +1,21 @@
+{
+  "name": "@cognitest/stimulus-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DOM renderer for visual stimuli used by the assessment engine",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@cognitest/assessment-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "happy-dom": "21.0.4"
+  }
+}

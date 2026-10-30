@@ -1,0 +1,6 @@
+apps/api
+pnpm-lock.yaml
+**/.next
+**/dist
+**/out
+**/coverage

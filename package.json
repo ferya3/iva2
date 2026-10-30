@@ -1,0 +1,30 @@
+{
+  "name": "cognitest",
+  "private": true,
+  "description": "Cognitest \u2014 multi-tenant cognitive assessment platform (monorepo)",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@cognitest/assessment-engine": "workspace:*",
+    "@cognitest/event-recorder": "workspace:*",
+    "@cognitest/timing-core": "workspace:*",
+    "@types/node": "24.10.1",
+    "prettier": "3.9.10",
+    "tsx": "4.21.0",
+    "turbo": "2.11.10",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

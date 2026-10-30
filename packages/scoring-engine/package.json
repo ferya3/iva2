@@ -1,0 +1,27 @@
+{
+  "name": "@cognitest/scoring-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Versioned, deterministic scoring and run-quality analysis of raw session events",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "build": "esbuild src/cli.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/cli.mjs"
+  },
+  "dependencies": {
+    "@cognitest/shared-types": "workspace:*",
+    "@cognitest/timing-core": "workspace:*",
+    "@cognitest/validation": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@cognitest/assessment-engine": "workspace:*",
+    "@cognitest/event-recorder": "workspace:*",
+    "esbuild": "0.27.7"
+  }
+}
