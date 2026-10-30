@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       api_url:
-        description: 'API URL, e.g. https://82.115.25.8/api/v1'
+        description: 'API URL, e.g. https://203.0.113.7/api/v1'
         required: true
-      cert_sha256:yBXKtuOzm3U3AQJkRkx9VA5ltiN3f7YvU2xpkPp8+AM=
+      cert_sha256:
         description: 'Self-signed server only: MAIN_VITE_API_CERT_SHA256 (sha256/…) printed by the installer'
         required: false
         default: ''
