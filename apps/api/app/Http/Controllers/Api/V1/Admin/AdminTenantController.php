@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Tenancy\AccountCredentials;
+use App\Domain\Tenancy\TenantProvisioner;
 use App\Domain\Tenancy\TenantRole;
 use App\Exceptions\ApiException;
-use App\Domain\Tenancy\TenantProvisioner;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;

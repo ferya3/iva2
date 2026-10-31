@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Tenancy\TenantProvisioner;
 use App\Domain\Tenancy\TenantRole;
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
@@ -102,7 +103,7 @@ class AuthTest extends TestCase
 
         // A user who also works at another clinic is not this clinic's to take over.
         $shared = User::factory()->create(['email' => 'shared@clinic.ir']);
-        $this->system(fn () => app(\App\Domain\Tenancy\TenantProvisioner::class)->provision(['name' => 'Other'], $shared, 'starter'));
+        $this->system(fn () => app(TenantProvisioner::class)->provision(['name' => 'Other'], $shared, 'starter'));
         $member = $this->postJson('/api/v1/tenant/members', ['email' => 'shared@clinic.ir', 'role' => 'clinician'])->assertCreated()->json('data.id');
         $this->postJson("/api/v1/tenant/members/{$member}/reset-password")->assertStatus(409)->assertJsonPath('code', 'shared_account');
         $this->postJson('/api/v1/auth/login', ['email' => 'shared@clinic.ir', 'password' => 'password'])->assertOk();
