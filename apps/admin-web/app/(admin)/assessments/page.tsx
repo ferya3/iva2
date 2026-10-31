@@ -13,6 +13,7 @@ import {
 import { api } from '@/lib/api';
 import { ActionButton } from '@/components/action-button';
 import { changeVersionStatus } from '@/features/assessments/actions';
+import { AgeRangeForm } from '@/features/assessments/age-range-form';
 
 export const metadata = { title: 'کاتالوگ آزمون‌ها' };
 
@@ -22,6 +23,10 @@ interface Version {
   status: 'draft' | 'published' | 'retired';
   is_clinical: boolean;
   estimated_duration_seconds: number;
+  min_age_years: number | null;
+  max_age_years: number | null;
+  audience_label: string | null;
+  age_range_label: string | null;
   published_at: string | null;
 }
 interface Type {
@@ -44,7 +49,7 @@ export default async function AssessmentsPage() {
     <>
       <PageHeader
         title="کاتالوگ آزمون‌ها"
-        description="نسخه‌های منتشرشده تغییرناپذیرند؛ هر تغییر پارامتر یک نسخه جدید می‌سازد."
+        description="نسخه‌های منتشرشده تغییرناپذیرند؛ هر تغییر پارامتر یک نسخه جدید می‌سازد. گروه سنی هر نسخه قابل ویرایش است و جلسهٔ جدید نسخهٔ متناسب با سن مراجع را می‌گیرد."
       />
       <Alert tone="info" className="mb-6">
         نسخه جدید از طریق API ثبت می‌شود (
@@ -67,6 +72,7 @@ export default async function AssessmentsPage() {
                 <tr>
                   <Th>نسخه</Th>
                   <Th>وضعیت</Th>
+                  <Th>گروه سنی</Th>
                   <Th>نوع</Th>
                   <Th>مدت</Th>
                   <Th>انتشار</Th>
@@ -81,6 +87,20 @@ export default async function AssessmentsPage() {
                     </Td>
                     <Td>
                       <Badge tone={STATUS[v.status].tone}>{STATUS[v.status].fa}</Badge>
+                    </Td>
+                    <Td>
+                      <span className="block">{v.audience_label ?? 'همهٔ سنین'}</span>
+                      {v.age_range_label ? (
+                        <span className="text-xs text-slate-500">{v.age_range_label}</span>
+                      ) : null}
+                      {v.status !== 'retired' ? (
+                        <AgeRangeForm
+                          versionId={v.id}
+                          min={v.min_age_years}
+                          max={v.max_age_years}
+                          audience={v.audience_label}
+                        />
+                      ) : null}
                     </Td>
                     <Td>{v.is_clinical ? 'بالینی' : 'غیربالینی'}</Td>
                     <Td>{faNumber(Math.round(v.estimated_duration_seconds / 60))} دقیقه</Td>

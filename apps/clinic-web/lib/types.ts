@@ -14,6 +14,7 @@ export interface Patient extends PatientDto {
   national_id?: string | null;
   phone?: string | null;
   sessions_count?: number;
+  research_consent?: boolean;
 }
 
 export interface Session {
@@ -21,7 +22,13 @@ export interface Session {
   patient_id: string;
   patient?: { id: string; patient_code: string };
   assessment_version_id: string;
-  assessment?: { name: string; version: string; is_clinical: boolean };
+  assessment?: {
+    name: string;
+    version: string;
+    is_clinical: boolean;
+    audience: string | null;
+    age_range: string | null;
+  };
   status: SessionStatus;
   validity_status: ValidityStatus | null;
   last_sequence: number;
@@ -65,18 +72,25 @@ export interface Dashboard {
   }>;
 }
 
+export interface AssessmentVersionSummary {
+  id: string;
+  version: string;
+  is_clinical: boolean;
+  estimated_duration_seconds: number;
+  min_age_years: number | null;
+  max_age_years: number | null;
+  audience_label: string | null;
+  age_range_label: string | null;
+  published_at: string | null;
+}
+
 export interface AssessmentType {
   id: string;
   key: string;
   name: string;
   category: string;
   description: string | null;
-  versions: Array<{
-    id: string;
-    version: string;
-    is_clinical: boolean;
-    estimated_duration_seconds: number;
-  }>;
+  versions: AssessmentVersionSummary[];
 }
 
 export interface Results {
@@ -93,6 +107,27 @@ export interface Results {
   }>;
   metrics: Array<{ key: string; value: number | null; unit: string | null; scope: string }>;
   scored_at: string;
+  /** Comparison with the published norms of this version (null: none apply). */
+  norms: {
+    name: string;
+    version: string;
+    provisional: boolean;
+    source: string | null;
+    age_years: number;
+    sex: 'male' | 'female' | null;
+    scores: Array<NormScore & { key: string; scope: string }>;
+  } | null;
+}
+
+export interface NormScore {
+  z: number;
+  standard_score: number;
+  percentile: number;
+  band: 'very_low' | 'low' | 'average' | 'high' | 'very_high';
+  direction: 'higher_better' | 'lower_better' | 'neutral';
+  n: number;
+  age_band: string;
+  sex: string;
 }
 
 export interface Member {

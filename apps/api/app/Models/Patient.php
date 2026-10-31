@@ -41,6 +41,12 @@ class Patient extends Model
         return $this->hasMany(Consent::class);
     }
 
+    /** Active consent to use this patient's anonymised results for research and norm studies. */
+    public function researchConsent(): HasOne
+    {
+        return $this->hasOne(Consent::class)->where('consent_type', 'research')->whereNull('revoked_at')->orderByDesc('accepted_at');
+    }
+
     public function notes(): HasMany
     {
         return $this->hasMany(PatientNote::class);

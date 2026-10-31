@@ -72,11 +72,14 @@ class DemoSeeder extends Seeder
             $patients[] = $patient;
         }
 
-        $version = AssessmentVersion::query()->published()->firstOrFail();
-        foreach ([1, 2, 3] as $i) {
+        // The standard (9+) version: the demo event stream was recorded with its protocol.
+        $protocol = json_decode(file_get_contents(__DIR__.'/data/demo-cpt.protocol.json'), true, flags: JSON_THROW_ON_ERROR);
+        $version = AssessmentVersion::query()->published()->where('version', $protocol['version'])->firstOrFail();
+        foreach ([2, 3, 4] as $i) {
             TestSession::create(['patient_id' => $patients[$i]->id, 'assessment_version_id' => $version->id, 'created_by' => $clinician->id]);
         }
-        $this->seedCompletedSession($patients[0], $version, $clinician);
+        // Patient 0 is 8 years old (child version); patient 1 (11) has a scored run.
+        $this->seedCompletedSession($patients[1], $version, $clinician);
     }
 
     /** Runs the real ingest + scoring pipeline on the generated demo event stream. */

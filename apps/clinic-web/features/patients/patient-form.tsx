@@ -40,7 +40,12 @@ export function PatientForm({ action, patient }: { action: Action; patient?: Pat
             defaultValue={patient?.national_id ?? ''}
           />
         </Field>
-        <Field label="تاریخ تولد (میلادی)" htmlFor="birth_date" error={err('birth_date')}>
+        <Field
+          label="تاریخ تولد (میلادی)"
+          htmlFor="birth_date"
+          error={err('birth_date')}
+          hint="برای انتخاب نسخهٔ آزمون متناسب با سن و مقایسه با هم‌سالان لازم است."
+        >
           <Input
             id="birth_date"
             name="birth_date"
@@ -134,6 +139,26 @@ export function PatientForm({ action, patient }: { action: Action; patient?: Pat
           </Field>
         </fieldset>
       ) : null}
+
+      <fieldset className="border-t border-slate-100 pt-6">
+        <legend className="mb-3 text-sm font-semibold text-slate-800">استفادهٔ پژوهشی</legend>
+        <label className="flex items-start gap-3 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="research_consent"
+            defaultChecked={patient?.research_consent ?? false}
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+          />
+          <span>
+            مراجع (یا ولی او) رضایت داده است که نتایج آزمون‌هایش، <b>بدون نام و اطلاعات هویتی</b>،
+            برای ساختن هنجارهای سنی (مقایسه با هم‌سالان) استفاده شود.
+            <span className="mt-1 block text-xs text-slate-500">
+              فقط سن، جنس، دست برتر، تحصیلات و نتایج آزمون استفاده می‌شود. این رضایت هر زمان با
+              برداشتن تیک لغو می‌شود.
+            </span>
+          </span>
+        </label>
+      </fieldset>
 
       <div className="flex justify-end">
         <SubmitButton pendingText="در حال ذخیره…">

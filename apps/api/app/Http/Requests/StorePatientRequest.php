@@ -33,6 +33,7 @@ class StorePatientRequest extends FormRequest
             'consent' => ['nullable', 'array'],
             'consent.accepted_by_name' => ['required_with:consent', 'string', 'max:200'],
             'consent.version' => ['required_with:consent', 'string', 'max:16'],
+            'research_consent' => ['sometimes', 'boolean'],
         ];
     }
 

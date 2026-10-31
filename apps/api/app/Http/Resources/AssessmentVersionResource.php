@@ -19,6 +19,10 @@ class AssessmentVersionResource extends JsonResource
             'status' => $this->status,
             'is_clinical' => $this->is_clinical,
             'estimated_duration_seconds' => $this->estimated_duration_seconds,
+            'min_age_years' => $this->min_age_years,
+            'max_age_years' => $this->max_age_years,
+            'audience_label' => $this->audience_label,
+            'age_range_label' => $this->ageRangeLabel(),
             'published_at' => $this->published_at?->toIso8601String(),
             'protocol' => $this->when($this->relationLoaded('protocol') && $request->user()?->isPlatformAdmin(), fn () => $this->protocol?->config),
         ];

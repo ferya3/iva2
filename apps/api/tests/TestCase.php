@@ -6,6 +6,7 @@ use App\Domain\Reports\PdfRenderer;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantProvisioner;
 use App\Domain\Tenancy\TenantRole;
+use App\Models\AssessmentVersion;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantUser;
@@ -71,6 +72,12 @@ abstract class TestCase extends BaseTestCase
         $this->withHeader('X-Tenant-ID', $tenant->id);
 
         return [$tenant, $user];
+    }
+
+    /** The standard (9+) demo version the event fixtures were recorded with. */
+    protected function demoVersion(): AssessmentVersion
+    {
+        return AssessmentVersion::query()->published()->where('version', '1.1.0')->firstOrFail();
     }
 
     protected function eventFixture(): array

@@ -10,11 +10,19 @@ export async function createSession(_: FormState, form: FormData): Promise<FormS
   try {
     const res = await api<{ data: { id: string } }>('/sessions', {
       method: 'POST',
-      body: {
-        patient_id: form.get('patient_id'),
-        assessment_version_id: form.get('assessment_version_id'),
-        notes: form.get('notes') || null,
-      },
+      // A manually chosen version wins; otherwise the API picks it by age.
+      body: form.get('assessment_version_id')
+        ? {
+            patient_id: form.get('patient_id'),
+            assessment_version_id: form.get('assessment_version_id'),
+            allow_age_override: form.get('allow_age_override') === '1',
+            notes: form.get('notes') || null,
+          }
+        : {
+            patient_id: form.get('patient_id'),
+            assessment_type_id: form.get('assessment_type_id'),
+            notes: form.get('notes') || null,
+          },
     });
     id = res.data.id;
   } catch (e) {

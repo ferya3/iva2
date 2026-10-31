@@ -77,7 +77,8 @@ export default async function SessionPage({ params, searchParams }: PageProps<'/
             <Link href={`/patients/${s.patient_id}`} className="ltr text-brand-700 hover:underline">
               {s.patient?.patient_code}
             </Link>
-            {' · '}نسخه <span className="ltr">{s.assessment?.version}</span> · ایجاد{' '}
+            {' · '}نسخه <span className="ltr">{s.assessment?.version}</span>
+            {s.assessment?.audience ? ` (${s.assessment.audience})` : ''} · ایجاد{' '}
             {faDateTime(s.created_at)}
           </>
         }

@@ -211,11 +211,14 @@ paths:
                   schema:
                     {
                       type: object,
-                      required: [patient_id, assessment_version_id],
+                      description: "Give assessment_type_id to let the API pick the version for the patient's age (errors age_required, no_version_for_age), or an explicit assessment_version_id (outside the age range: age_out_of_range unless allow_age_override).",
+                      required: [patient_id],
                       properties:
                         {
                           patient_id: { type: string, format: uuid },
+                          assessment_type_id: { type: string, format: uuid },
                           assessment_version_id: { type: string, format: uuid },
+                          allow_age_override: { type: boolean },
                           notes: { type: string },
                         },
                     },
@@ -533,6 +536,48 @@ paths:
           responses: { '200': { description: OK } },
         },
     }
+  /admin/assessment-versions/{version}:
+    patch:
+      tags: [Admin]
+      summary: Change the age range (min_age_years, max_age_years, audience_label); allowed after publishing
+      parameters:
+        [{ name: version, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: OK } }
+  /admin/assessment-versions/{version}/norm-sets:
+    post:
+      tags: [Admin]
+      summary: Upload a draft norm set (name, version, provisional, source, csv) — see docs/validation/norms.md
+      parameters:
+        [{ name: version, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        {
+          '201': { description: Created },
+          '422': { description: 'errors.csv lists problems per line' },
+        }
+  /admin/norm-sets:
+    get:
+      { tags: [Admin], summary: Norm sets with coverage, responses: { '200': { description: OK } } }
+  /admin/norm-sets/{normSet}/publish:
+    post:
+      tags: [Admin]
+      summary: Publish (replaces the version's active norms for new reports; immutable afterwards)
+      parameters:
+        [{ name: normSet, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: OK } }
+  /admin/assessment-versions/{version}/research-summary:
+    get:
+      tags: [Admin]
+      summary: Consented, valid sessions by age and sex
+      parameters:
+        [{ name: version, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: OK } }
+  /admin/assessment-versions/{version}/research-export:
+    get:
+      tags: [Admin]
+      summary: Anonymised CSV of consented, valid sessions (audited)
+      parameters:
+        [{ name: version, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: text/csv } }
   /admin/audit-logs:
     { get: { tags: [Admin], summary: Audit trail, responses: { '200': { description: OK } } } }
 

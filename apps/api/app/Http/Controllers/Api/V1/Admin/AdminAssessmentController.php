@@ -15,6 +15,7 @@ use App\Models\ValidationRule;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Catalogue management. Versions are created as drafts with their full
@@ -23,6 +24,12 @@ use Illuminate\Support\Facades\DB;
  */
 class AdminAssessmentController extends Controller
 {
+    private const AGE_RULES = [
+        'min_age_years' => ['nullable', 'integer', 'min:0', 'max:120'],
+        'max_age_years' => ['nullable', 'integer', 'min:0', 'max:120'],
+        'audience_label' => ['nullable', 'string', 'max:64'],
+    ];
+
     public function index(): AnonymousResourceCollection
     {
         return AssessmentTypeResource::collection(
@@ -46,10 +53,12 @@ class AdminAssessmentController extends Controller
     public function storeVersion(Request $request, AssessmentType $type): AssessmentVersionResource
     {
         $data = $request->validate([
-            'version' => ['required', 'string', 'max:32', 'regex:/^\d+\.\d+\.\d+$/'],
+            // Optional suffix names a variant of the same release, e.g. 1.1.0-child.
+            'version' => ['required', 'string', 'max:32', 'regex:/^\d+\.\d+\.\d+(-[a-z0-9]+)?$/'],
             'is_clinical' => ['required', 'boolean'],
             'estimated_duration_seconds' => ['required', 'integer', 'min:1'],
             'min_engine_version' => ['nullable', 'string', 'max:32'],
+            ...self::AGE_RULES,
             'protocol' => ['required', 'array'],
             'protocol.key' => ['required', 'string'],
             'protocol.version' => ['required', 'string', 'same:version'],
@@ -62,6 +71,7 @@ class AdminAssessmentController extends Controller
             'scoring.algorithm_version' => ['required', 'string', 'max:64'],
             'scoring.config' => ['nullable', 'array'],
         ]);
+        $this->ensureAgeRange($data);
         if ($type->versions()->where('version', $data['version'])->exists()) {
             throw new ApiException('This version already exists.', 'version_exists', 409);
         }
@@ -73,6 +83,9 @@ class AdminAssessmentController extends Controller
                 'is_clinical' => $data['is_clinical'],
                 'estimated_duration_seconds' => $data['estimated_duration_seconds'],
                 'min_engine_version' => $data['min_engine_version'] ?? '1.0.0',
+                'min_age_years' => $data['min_age_years'] ?? null,
+                'max_age_years' => $data['max_age_years'] ?? null,
+                'audience_label' => $data['audience_label'] ?? null,
             ]);
             AssessmentProtocol::create(['assessment_version_id' => $version->id, 'config' => $data['protocol']]);
             ValidationRule::create(['assessment_version_id' => $version->id, 'rules' => $data['validation_rules'] ?? []]);
@@ -87,6 +100,17 @@ class AdminAssessmentController extends Controller
         });
 
         return new AssessmentVersionResource($version->load('protocol'));
+    }
+
+    /** Changes who a version is for (age range); allowed after publishing. */
+    public function updateEligibility(Request $request, AssessmentVersion $version, AuditLogger $audit): AssessmentVersionResource
+    {
+        $data = $request->validate(self::AGE_RULES);
+        $this->ensureAgeRange($data);
+        $version->update($data);
+        $audit->log('admin.assessment.eligibility_updated', $version, $data);
+
+        return new AssessmentVersionResource($version);
     }
 
     public function publish(AssessmentVersion $version, AuditLogger $audit): AssessmentVersionResource
@@ -109,5 +133,12 @@ class AdminAssessmentController extends Controller
         $audit->log('admin.assessment.retired', $version);
 
         return new AssessmentVersionResource($version);
+    }
+
+    private function ensureAgeRange(array $data): void
+    {
+        if (isset($data['min_age_years'], $data['max_age_years']) && $data['max_age_years'] < $data['min_age_years']) {
+            throw ValidationException::withMessages(['max_age_years' => 'The maximum age must not be below the minimum age.']);
+        }
     }
 }

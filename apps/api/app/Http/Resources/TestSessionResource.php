@@ -23,6 +23,8 @@ class TestSessionResource extends JsonResource
                 'name' => $this->assessmentVersion->type?->name,
                 'version' => $this->assessmentVersion->version,
                 'is_clinical' => $this->assessmentVersion->is_clinical,
+                'audience' => $this->assessmentVersion->audience_label,
+                'age_range' => $this->assessmentVersion->ageRangeLabel(),
             ]),
             'status' => $this->status->value,
             'validity_status' => $this->validity_status,

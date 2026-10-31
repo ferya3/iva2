@@ -135,6 +135,10 @@ const MESSAGES: Record<string, string> = {
   session_not_reportable: 'گزارش فقط برای جلسات تحلیل‌شده و معتبر قابل صدور است.',
   already_member: 'این کاربر قبلاً عضو کلینیک است.',
   assessment_unavailable: 'این نسخه آزمون در دسترس نیست.',
+  age_required:
+    'تاریخ تولد مراجعه‌کننده ثبت نشده است؛ برای انتخاب نسخهٔ متناسب با سن، ابتدا آن را در پروندهٔ مراجع وارد کنید.',
+  no_version_for_age: 'برای سن این مراجعه‌کننده نسخه‌ای از این آزمون تعریف نشده است.',
+  age_out_of_range: 'این نسخه برای سن این مراجعه‌کننده طراحی نشده است.',
 };
 
 export function persianMessage(error: ApiRequestError): string {

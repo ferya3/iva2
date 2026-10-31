@@ -10,32 +10,50 @@ use App\Models\ValidationRule;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the generic demo CPT (non-clinical). The protocol JSON is exported
+ * Seeds the generic demo CPT (non-clinical) in two age versions. The protocol JSON is exported
  * from packages/assessment-engine by scripts/export-demo-protocol.ts.
  */
 class AssessmentCatalogSeeder extends Seeder
 {
+    /** file => [estimated seconds, min age, max age, audience label] */
+    private const VERSIONS = [
+        'demo-cpt.protocol.json' => [420, 9, null, 'نوجوانان و بزرگسالان'],
+        'demo-cpt-child.protocol.json' => [330, 6, 8, 'کودکان ۶ تا ۸ سال'],
+    ];
+
     public function run(): void
     {
-        $protocol = json_decode(file_get_contents(__DIR__.'/data/demo-cpt.protocol.json'), true, flags: JSON_THROW_ON_ERROR);
-
         $type = AssessmentType::query()->updateOrCreate(['key' => 'demo-cpt'], [
             'name' => 'آزمون عملکرد پیوسته دیداری-شنیداری اعداد ۱ و ۲ (نمایشی)',
             'name_en' => 'Audio-visual digit CPT (demo)',
             'category' => 'attention',
-            'description' => 'آزمون Go/No-Go عمومی با عدد ۱ (پاسخ) و ۲ (عدم پاسخ)، نوشتاری و گفتاری. برای اعتبارسنجی فنی و نمایش؛ غیربالینی و فاقد هنجار.',
+            'description' => 'آزمون Go/No-Go عمومی با عدد ۱ (پاسخ) و ۲ (عدم پاسخ)، نوشتاری و گفتاری؛ نسخهٔ کودک (۶ تا ۸ سال) کوتاه‌تر و آهسته‌تر است. برای اعتبارسنجی فنی و نمایش؛ غیربالینی و فاقد هنجار.',
         ]);
 
-        if ($type->versions()->where('version', $protocol['version'])->exists()) {
-            return; // published versions are immutable
+        $current = [];
+        foreach (self::VERSIONS as $file => [$seconds, $minAge, $maxAge, $audience]) {
+            $protocol = json_decode(file_get_contents(__DIR__.'/data/'.$file), true, flags: JSON_THROW_ON_ERROR);
+            $version = $type->versions()->where('version', $protocol['version'])->first()
+                ?? $this->publish($type, $protocol, $seconds);
+            // Eligibility is metadata: set it on versions published before age ranges existed.
+            if ($version->min_age_years === null && $version->max_age_years === null) {
+                $version->update(['min_age_years' => $minAge, 'max_age_years' => $maxAge, 'audience_label' => $audience]);
+            }
+            $current[] = $version->id;
         }
 
+        // New sessions use the current versions; existing sessions keep theirs.
+        $type->versions()->whereNotIn('id', $current)->where('status', 'published')->update(['status' => 'retired']);
+    }
+
+    private function publish(AssessmentType $type, array $protocol, int $seconds): AssessmentVersion
+    {
         $version = AssessmentVersion::create([
             'assessment_type_id' => $type->id,
             'version' => $protocol['version'],
             'status' => 'draft',
             'is_clinical' => false,
-            'estimated_duration_seconds' => 420,
+            'estimated_duration_seconds' => $seconds,
             // 1.1.0: recorded (spoken) stimuli bundled with the player.
             'min_engine_version' => '1.1.0',
         ]);
@@ -67,7 +85,6 @@ class AssessmentCatalogSeeder extends Seeder
         ]);
         $version->update(['status' => 'published', 'published_at' => now()]);
 
-        // New sessions use the new version; existing sessions keep theirs.
-        $type->versions()->where('id', '!=', $version->id)->where('status', 'published')->update(['status' => 'retired']);
+        return $version;
     }
 }

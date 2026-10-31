@@ -27,6 +27,7 @@ class PatientResource extends JsonResource
             'national_id' => $this->when($request->routeIs('patients.show'), fn () => $profile?->national_id),
             'phone' => $this->when($request->routeIs('patients.show'), fn () => $profile?->phone),
             'sessions_count' => $this->whenCounted('sessions'),
+            'research_consent' => $this->when($this->relationLoaded('researchConsent'), fn () => $this->researchConsent !== null),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

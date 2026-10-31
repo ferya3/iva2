@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reports;
 
+use App\Domain\Norms\NormScorer;
 use App\Models\ScoringRun;
 use App\Models\TestSession;
 use Illuminate\Support\Str;
@@ -13,7 +14,10 @@ use Illuminate\Support\Str;
  */
 final class ReportBuilder
 {
-    public const SCHEMA_VERSION = '1.0';
+    public function __construct(private readonly NormScorer $norms) {}
+
+    /** 1.1: optional per-metric norm comparison, report-level norms, session audience. */
+    public const SCHEMA_VERSION = '1.1';
 
     /** Reports are Persian whatever the server's APP_LOCALE is. */
     public const LOCALE = 'fa';
@@ -29,17 +33,29 @@ final class ReportBuilder
         $metrics = $run->metrics->groupBy('scope');
         $assessment = $session->assessmentVersion;
         $profile = $session->patient->profile;
+        $norms = $this->norms->score($session, $run->metrics);
+        $normed = 0;
 
         $pick = fn (string $scope, array $keys) => collect($keys)
             ->map(fn ($key) => $metrics->get($scope)?->firstWhere('metric_key', $key))
             ->filter()
-            ->map(fn ($m) => [
-                'key' => $m->metric_key,
-                'label' => __("metrics.{$m->metric_key}", [], self::LOCALE),
-                'value' => $m->value,
-                'unit' => $m->unit,
-                'scope' => $m->scope,
-            ])->values()->all();
+            ->map(function ($m) use ($norms, &$normed) {
+                $norm = $norms['scores']["{$m->scope}:{$m->metric_key}"] ?? null;
+                if ($norm) {
+                    $normed++;
+                    unset($norm['scope'], $norm['key']);
+                    $norm['band_label'] = __("metrics.bands.{$norm['band']}", [], self::LOCALE);
+                }
+
+                return [
+                    'key' => $m->metric_key,
+                    'label' => __("metrics.{$m->metric_key}", [], self::LOCALE),
+                    'value' => $m->value,
+                    'unit' => $m->unit,
+                    'scope' => $m->scope,
+                    'norm' => $norm,
+                ];
+            })->values()->all();
 
         $sections = [
             ['key' => 'overview', 'title' => __('metrics.sections.overview', [], self::LOCALE), 'metrics' => $pick('overall', self::OVERVIEW)],
@@ -49,9 +65,21 @@ final class ReportBuilder
         ];
         $sections = array_values(array_filter($sections, fn ($s) => $s['metrics'] !== []));
 
+        $metricCount = array_sum(array_map(fn ($s) => count($s['metrics']), $sections));
         $disclaimers = __('metrics.disclaimers', [], self::LOCALE);
         if (! $assessment->is_clinical) {
             array_unshift($disclaimers, __('metrics.non_clinical', [], self::LOCALE));
+        }
+        if ($norms) {
+            $disclaimers[] = __('metrics.normed', ['name' => $norms['set']['name'], 'version' => $norms['set']['version']], self::LOCALE);
+            if ($normed < $metricCount) {
+                $disclaimers[] = __('metrics.normed_partial', [], self::LOCALE);
+            }
+            if ($norms['set']['provisional']) {
+                $disclaimers[] = __('metrics.provisional_norms', [], self::LOCALE);
+            }
+        } else {
+            $disclaimers[] = __('metrics.raw_scores', [], self::LOCALE);
         }
 
         $calibration = $session->latestCalibration;
@@ -75,6 +103,8 @@ final class ReportBuilder
                 'assessment_name' => $assessment->type->name,
                 'assessment_version' => $assessment->version,
                 'is_clinical' => $assessment->is_clinical,
+                'audience' => $assessment->audience_label,
+                'age_range' => $assessment->ageRangeLabel(),
                 'engine_version' => $session->engine_version,
                 'started_at' => $session->started_at?->toIso8601String(),
                 'completed_at' => $session->completed_at?->toIso8601String(),
@@ -92,6 +122,11 @@ final class ReportBuilder
                 'algorithm_version' => $run->algorithm_version,
                 'scored_at' => $run->finished_at->toIso8601String(),
             ],
+            'norms' => $norms ? [
+                ...$norms['set'],
+                'age_years' => $norms['age_years'],
+                'sex' => $norms['sex'],
+            ] : null,
             'sections' => $sections,
             'disclaimers' => $disclaimers,
         ];

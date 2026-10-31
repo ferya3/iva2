@@ -7,7 +7,6 @@ use App\Domain\Events\EventStream;
 use App\Domain\Sessions\SessionStateMachine;
 use App\Domain\Sessions\SessionStatus;
 use App\Domain\Tenancy\TenantRole;
-use App\Models\AssessmentVersion;
 use App\Models\TestSession;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -23,8 +22,8 @@ class EventIngestTest extends TestCase
     {
         parent::setUp();
         [$tenant, $user] = $this->actingAsClinic(TenantRole::Clinician);
-        $patient = $this->postJson('/api/v1/patients', ['patient_code' => 'P-9'])->json('data.id');
-        $version = AssessmentVersion::query()->published()->first();
+        $patient = $this->postJson('/api/v1/patients', ['patient_code' => 'P-9', 'birth_date' => '2000-01-01'])->json('data.id');
+        $version = $this->demoVersion();
         $id = $this->postJson('/api/v1/sessions', ['patient_id' => $patient, 'assessment_version_id' => $version->id])->json('data.id');
         $code = $this->postJson("/api/v1/sessions/{$id}/invite")->json('code');
         $this->token = $this->postJson('/api/v1/player/join', ['code' => $code, 'device_id' => 'dev-1'])->json('token');

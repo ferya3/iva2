@@ -24,6 +24,9 @@
   .flags li { margin-bottom: 2px; }
   .disclaimer { margin-top: 18px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 8.5pt; color: #475569; }
   .warning { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 9.5pt; }
+  .norms { background: #f0fdfa; border: 1px solid #99f6e4; color: #134e4a; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 9.5pt; }
+  .band { font-size: 9pt; font-weight: 600; }
+  .very_low, .low { color: #b91c1c; } .average { color: #334155; } .high, .very_high { color: #15803d; }
 </style>
 </head>
 <body>
@@ -45,13 +48,21 @@
 <section class="grid">
   <div><span>کد مراجع</span>{{ $doc['patient']['code'] }}</div>
   <div><span>سن</span>{{ Format::digits($doc['patient']['age_years']) }}</div>
-  <div><span>نسخه آزمون</span>{{ $doc['session']['assessment_version'] }}</div>
+  <div><span>نسخه آزمون</span>{{ $doc['session']['assessment_version'] }}@if(!empty($doc['session']['audience'])) <small>({{ $doc['session']['audience'] }})</small>@endif</div>
   <div><span>اعتبار اجرا</span><b class="badge {{ $doc['quality']['validity_status'] }}">{{ Format::validity($doc['quality']['validity_status']) }}</b></div>
   <div><span>شروع</span>{{ $doc['session']['started_at'] ? \Illuminate\Support\Carbon::parse($doc['session']['started_at'])->format('Y-m-d H:i') : '—' }}</div>
   <div><span>نرخ نوسازی نمایشگر</span>{{ isset($doc['session']['device']['refresh_rate_hz']) ? Format::metric($doc['session']['device']['refresh_rate_hz'], null).' Hz' : '—' }}</div>
   <div><span>کالیبراسیون</span>{{ $doc['session']['device']['calibration_verdict'] ?? '—' }}</div>
   <div><span>نسخه موتور</span>{{ $doc['session']['engine_version'] ?? '—' }}</div>
 </section>
+
+@if(!empty($doc['norms']))
+  <div class="norms">
+    مقایسه با هم‌سالان: هنجار «{{ $doc['norms']['name'] }}» (نسخه {{ $doc['norms']['version'] }})، سن مراجع {{ Format::digits($doc['norms']['age_years']) }} سال
+    @if($doc['norms']['sex'] === 'female') · دختران/زنان @elseif($doc['norms']['sex'] === 'male') · پسران/مردان @endif
+    @if($doc['norms']['provisional']) · <b>هنجار مقدماتی</b> @endif
+  </div>
+@endif
 
 @if(count($doc['quality']['flags']))
   <h2>کنترل کیفیت اجرا</h2>
@@ -63,13 +74,28 @@
 @endif
 
 @foreach($doc['sections'] as $section)
+@php $normed = collect($section['metrics'])->contains(fn ($m) => !empty($m['norm'])); @endphp
 <section class="metrics">
   <h2>{{ $section['title'] }}</h2>
   <table>
-    <thead><tr><th>شاخص</th><th style="width: 34%">مقدار</th></tr></thead>
+    <thead><tr>
+      <th>شاخص</th><th style="width: {{ $normed ? '22' : '34' }}%">مقدار</th>
+      @if($normed)<th style="width: 14%">نمرهٔ استاندارد</th><th style="width: 10%">صدک</th><th style="width: 20%">نسبت به هم‌سالان</th>@endif
+    </tr></thead>
     <tbody>
     @foreach($section['metrics'] as $m)
-      <tr><td>{{ $m['label'] }}</td><td class="num">{{ Format::metric($m['value'], $m['unit']) }}</td></tr>
+      <tr>
+        <td>{{ $m['label'] }}</td><td class="num">{{ Format::metric($m['value'], $m['unit']) }}</td>
+        @if($normed)
+          @if(!empty($m['norm']))
+            <td class="num">{{ Format::digits($m['norm']['standard_score']) }}</td>
+            <td class="num">{{ Format::metric($m['norm']['percentile'], null) }}</td>
+            <td><span class="band {{ $m['norm']['band'] }}">{{ $m['norm']['band_label'] }}</span></td>
+          @else
+            <td class="num">—</td><td class="num">—</td><td>—</td>
+          @endif
+        @endif
+      </tr>
     @endforeach
     </tbody>
   </table>

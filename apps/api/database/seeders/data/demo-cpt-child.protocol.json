@@ -1,0 +1,211 @@
+{
+  "key": "demo-cpt",
+  "version": "1.1.0-child",
+  "clinical": false,
+  "stimuli": {
+    "v-1": {
+      "modality": "visual",
+      "shape": "text",
+      "text": "۱",
+      "color": "#ffffff",
+      "sizePx": 280
+    },
+    "v-2": {
+      "modality": "visual",
+      "shape": "text",
+      "text": "۲",
+      "color": "#ffffff",
+      "sizePx": 280
+    },
+    "a-1": {
+      "modality": "auditory",
+      "assetKey": "fa/digit-1",
+      "durationMs": 400,
+      "levelDb": -3
+    },
+    "a-2": {
+      "modality": "auditory",
+      "assetKey": "fa/digit-2",
+      "durationMs": 400,
+      "levelDb": -3
+    }
+  },
+  "response": {
+    "keys": [
+      "Space"
+    ],
+    "mouseButtons": [
+      "left"
+    ]
+  },
+  "timing": {
+    "leadInMs": 2000,
+    "visualDurationMs": 300,
+    "responseWindowMs": 1700,
+    "anticipationMs": 150,
+    "soaMs": [
+      1800,
+      2300
+    ],
+    "interBlockMs": 8000,
+    "presentationLatencyFrames": 1,
+    "audioLookaheadMs": 120
+  },
+  "blocks": [
+    {
+      "key": "practice",
+      "practice": true,
+      "trials": 20,
+      "targetRatio": 0.5,
+      "modalities": [
+        "visual",
+        "auditory"
+      ],
+      "targets": {
+        "visual": [
+          "v-1"
+        ],
+        "auditory": [
+          "a-1"
+        ]
+      },
+      "nonTargets": {
+        "visual": [
+          "v-2"
+        ],
+        "auditory": [
+          "a-2"
+        ]
+      },
+      "maxConsecutiveTargets": 3,
+      "instructions": {
+        "fa": "بازی اعداد! هر وقت ۱ را دیدی یا شنیدی «یک»، کلید بزرگ فاصله را بزن. اگر ۲ دیدی یا شنیدی «دو»، دستت را نگه دار و نزن. اول با هم تمرین می‌کنیم.",
+        "en": "Number game! Press the big Space key for 1 or \"one\". Hold still for 2 or \"two\". Let's practise first."
+      }
+    },
+    {
+      "key": "main-1",
+      "practice": false,
+      "trials": 30,
+      "targetRatio": 0.8,
+      "modalities": [
+        "visual",
+        "auditory"
+      ],
+      "targets": {
+        "visual": [
+          "v-1"
+        ],
+        "auditory": [
+          "a-1"
+        ]
+      },
+      "nonTargets": {
+        "visual": [
+          "v-2"
+        ],
+        "auditory": [
+          "a-2"
+        ]
+      },
+      "maxConsecutiveTargets": 0,
+      "instructions": {
+        "fa": "آفرین! بخش اول از ۴. یادت باشد: ۱ ← بزن، ۲ ← نزن.",
+        "en": "Well done! Part 1 of 4. Remember: 1 → press, 2 → don't press."
+      }
+    },
+    {
+      "key": "main-2",
+      "practice": false,
+      "trials": 30,
+      "targetRatio": 0.2,
+      "modalities": [
+        "visual",
+        "auditory"
+      ],
+      "targets": {
+        "visual": [
+          "v-1"
+        ],
+        "auditory": [
+          "a-1"
+        ]
+      },
+      "nonTargets": {
+        "visual": [
+          "v-2"
+        ],
+        "auditory": [
+          "a-2"
+        ]
+      },
+      "maxConsecutiveTargets": 3,
+      "instructions": {
+        "fa": "آفرین! بخش دوم از ۴. یادت باشد: ۱ ← بزن، ۲ ← نزن.",
+        "en": "Well done! Part 2 of 4. Remember: 1 → press, 2 → don't press."
+      }
+    },
+    {
+      "key": "main-3",
+      "practice": false,
+      "trials": 30,
+      "targetRatio": 0.8,
+      "modalities": [
+        "visual",
+        "auditory"
+      ],
+      "targets": {
+        "visual": [
+          "v-1"
+        ],
+        "auditory": [
+          "a-1"
+        ]
+      },
+      "nonTargets": {
+        "visual": [
+          "v-2"
+        ],
+        "auditory": [
+          "a-2"
+        ]
+      },
+      "maxConsecutiveTargets": 0,
+      "instructions": {
+        "fa": "آفرین! بخش سوم از ۴. یادت باشد: ۱ ← بزن، ۲ ← نزن.",
+        "en": "Well done! Part 3 of 4. Remember: 1 → press, 2 → don't press."
+      }
+    },
+    {
+      "key": "main-4",
+      "practice": false,
+      "trials": 30,
+      "targetRatio": 0.2,
+      "modalities": [
+        "visual",
+        "auditory"
+      ],
+      "targets": {
+        "visual": [
+          "v-1"
+        ],
+        "auditory": [
+          "a-1"
+        ]
+      },
+      "nonTargets": {
+        "visual": [
+          "v-2"
+        ],
+        "auditory": [
+          "a-2"
+        ]
+      },
+      "maxConsecutiveTargets": 3,
+      "instructions": {
+        "fa": "آفرین! بخش چهارم از ۴. یادت باشد: ۱ ← بزن، ۲ ← نزن.",
+        "en": "Well done! Part 4 of 4. Remember: 1 → press, 2 → don't press."
+      }
+    }
+  ]
+}

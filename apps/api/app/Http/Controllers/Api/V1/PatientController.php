@@ -68,32 +68,44 @@ class PatientController extends Controller
                 ]);
             }
 
+            if ($data['research_consent'] ?? false) {
+                $this->recordResearchConsent($patient, $data, $request);
+            }
+
             return $patient;
         });
         $audit->log('patient.created', $patient);
 
-        return new PatientResource($patient->load('profile'));
+        return new PatientResource($patient->load(['profile', 'researchConsent']));
     }
 
     public function show(Patient $patient, AuditLogger $audit): PatientResource
     {
         $audit->log('patient.viewed', $patient);
 
-        return new PatientResource($patient->load('profile')->loadCount('sessions'));
+        return new PatientResource($patient->load(['profile', 'researchConsent'])->loadCount('sessions'));
     }
 
     public function update(StorePatientRequest $request, Patient $patient, AuditLogger $audit): PatientResource
     {
         $data = $request->validated();
-        DB::transaction(function () use ($patient, $data) {
+        DB::transaction(function () use ($patient, $data, $request) {
             if (isset($data['patient_code'])) {
                 $patient->update(['patient_code' => $data['patient_code']]);
             }
             $patient->profile()->updateOrCreate(['patient_id' => $patient->id], Arr::only($data, self::PROFILE_FIELDS));
+            if (array_key_exists('research_consent', $data)) {
+                $active = $patient->researchConsent()->first();
+                if ($data['research_consent'] && ! $active) {
+                    $this->recordResearchConsent($patient, $data, $request);
+                } elseif (! $data['research_consent'] && $active) {
+                    $active->update(['revoked_at' => now()]);
+                }
+            }
         });
         $audit->log('patient.updated', $patient, ['fields' => array_keys($data)]);
 
-        return new PatientResource($patient->load('profile'));
+        return new PatientResource($patient->load(['profile', 'researchConsent']));
     }
 
     public function destroy(Patient $patient, AuditLogger $audit): Response
@@ -109,6 +121,18 @@ class PatientController extends Controller
         return TestSessionResource::collection(
             $patient->sessions()->with('assessmentVersion.type')->latest()->paginate(20)
         );
+    }
+
+    private function recordResearchConsent(Patient $patient, array $data, Request $request): void
+    {
+        Consent::create([
+            'patient_id' => $patient->id,
+            'consent_type' => 'research',
+            'version' => '1.0',
+            'accepted_by_name' => $data['consent']['accepted_by_name'] ?? $data['guardian']['full_name'] ?? (trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? '')) ?: 'ثبت‌شده توسط '.$request->user()->name),
+            'accepted_at' => now(),
+            'recorded_by' => $request->user()->id,
+        ]);
     }
 
     private function nextCode(): string

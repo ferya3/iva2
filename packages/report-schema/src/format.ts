@@ -54,6 +54,18 @@ export const METRIC_LABELS: Record<string, { fa: string; en: string }> = {
   hit_rate_slope_per_block: { fa: 'روند دقت در طول آزمون', en: 'Hit-rate trend per block' },
 };
 
+/** Keep in sync with lang/fa/metrics.php (bands). */
+export const NORM_BAND_LABELS: Record<
+  'very_low' | 'low' | 'average' | 'high' | 'very_high',
+  { fa: string; tone: 'bad' | 'warn' | 'ok' | 'good' }
+> = {
+  very_low: { fa: 'بسیار پایین', tone: 'bad' },
+  low: { fa: 'پایین‌تر از میانگین', tone: 'warn' },
+  average: { fa: 'در محدودهٔ میانگین', tone: 'ok' },
+  high: { fa: 'بالاتر از میانگین', tone: 'good' },
+  very_high: { fa: 'بسیار بالا', tone: 'good' },
+};
+
 export function metricLabel(key: string, locale: 'fa' | 'en' = 'fa'): string {
   return METRIC_LABELS[key]?.[locale] ?? key;
 }

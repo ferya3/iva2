@@ -54,4 +54,13 @@ class PatientTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors(['patient_code', 'national_id', 'phone']);
     }
+
+    public function test_validation_messages_are_readable_text_not_translation_keys(): void
+    {
+        config(['app.locale' => 'fa']); // as in production (Docker sets APP_LOCALE=fa)
+        app()->setLocale('fa');
+        $this->actingAsClinic();
+        $message = $this->postJson('/api/v1/patients', ['birth_date' => 'not-a-date'])->assertStatus(422)->json('errors.birth_date.0');
+        $this->assertStringNotContainsString('validation.', $message);
+    }
 }

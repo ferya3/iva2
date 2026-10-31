@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdminAssessmentController;
+use App\Http\Controllers\Api\V1\Admin\AdminNormController;
 use App\Http\Controllers\Api\V1\Admin\AdminOverviewController;
 use App\Http\Controllers\Api\V1\Admin\AdminPlanController;
+use App\Http\Controllers\Api\V1\Admin\AdminResearchController;
 use App\Http\Controllers\Api\V1\Admin\AdminTenantController;
 use App\Http\Controllers\Api\V1\AssessmentCatalogController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -23,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 |   desktop player          → per-session player token (auth.player)
 */
 
-foreach (['session', 'patient', 'report', 'tenant', 'version', 'type'] as $param) {
+foreach (['session', 'patient', 'report', 'tenant', 'version', 'type', 'normSet'] as $param) {
     Route::pattern($param, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -94,8 +96,17 @@ Route::prefix('v1')->group(function () {
             Route::get('assessments', [AdminAssessmentController::class, 'index']);
             Route::post('assessment-types', [AdminAssessmentController::class, 'storeType']);
             Route::post('assessment-types/{type}/versions', [AdminAssessmentController::class, 'storeVersion']);
+            Route::patch('assessment-versions/{version}', [AdminAssessmentController::class, 'updateEligibility']);
             Route::post('assessment-versions/{version}/publish', [AdminAssessmentController::class, 'publish']);
             Route::post('assessment-versions/{version}/retire', [AdminAssessmentController::class, 'retire']);
+            Route::get('norm-sets', [AdminNormController::class, 'index']);
+            Route::post('assessment-versions/{version}/norm-sets', [AdminNormController::class, 'store']);
+            Route::get('norm-sets/{normSet}', [AdminNormController::class, 'show'])->name('admin.norm-sets.show');
+            Route::post('norm-sets/{normSet}/publish', [AdminNormController::class, 'publish']);
+            Route::post('norm-sets/{normSet}/retire', [AdminNormController::class, 'retire']);
+            Route::delete('norm-sets/{normSet}', [AdminNormController::class, 'destroy']);
+            Route::get('assessment-versions/{version}/research-summary', [AdminResearchController::class, 'summary']);
+            Route::get('assessment-versions/{version}/research-export', [AdminResearchController::class, 'export']);
         });
     });
 

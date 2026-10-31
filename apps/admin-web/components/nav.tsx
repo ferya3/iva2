@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BookOpenCheck,
+  ChartNoAxesColumn,
   Building2,
   CreditCard,
   KeyRound,
@@ -18,6 +19,7 @@ const NAV = [
   { href: '/tenants', label: 'کلینیک‌ها', icon: Building2 },
   { href: '/plans', label: 'پلن‌های اشتراک', icon: CreditCard },
   { href: '/assessments', label: 'کاتالوگ آزمون‌ها', icon: BookOpenCheck },
+  { href: '/norms', label: 'هنجارها و داده پژوهشی', icon: ChartNoAxesColumn },
   { href: '/users', label: 'کاربران', icon: UserCog },
   { href: '/audit', label: 'گزارش رویدادها', icon: ScrollText },
   { href: '/account', label: 'حساب کاربری', icon: KeyRound },

@@ -30,6 +30,7 @@ function payload(form: FormData) {
         }
       : undefined,
     consent: consentBy ? { accepted_by_name: consentBy, version: '1.0' } : undefined,
+    research_consent: form.get('research_consent') === 'on',
   };
 }
 

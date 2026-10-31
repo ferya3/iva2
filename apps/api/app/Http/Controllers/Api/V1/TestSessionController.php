@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Norms\NormScorer;
 use App\Domain\Scoring\ScoreSession;
 use App\Domain\Sessions\PlayerAuth;
 use App\Domain\Sessions\SessionLifecycle;
@@ -42,16 +43,54 @@ class TestSessionController extends Controller
         );
     }
 
+    /**
+     * Creates a session. With assessment_type_id the version is chosen from
+     * the patient's age (the published version whose age range contains
+     * it); an explicit assessment_version_id outside the patient's age range
+     * needs allow_age_override, which is audited.
+     */
     public function store(Request $request, QuotaGuard $quota, TenantContext $context, AuditLogger $audit): TestSessionResource
     {
         $data = $request->validate([
             'patient_id' => ['required', 'uuid'],
-            'assessment_version_id' => ['required', 'uuid'],
+            'assessment_type_id' => ['required_without:assessment_version_id', 'nullable', 'uuid'],
+            'assessment_version_id' => ['required_without:assessment_type_id', 'nullable', 'uuid'],
+            'allow_age_override' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
-        $patient = Patient::query()->findOrFail($data['patient_id']);
-        $version = AssessmentVersion::query()->published()->find($data['assessment_version_id'])
-            ?? throw new ApiException('Assessment version is not available.', 'assessment_unavailable', 422);
+        $patient = Patient::query()->with('profile')->findOrFail($data['patient_id']);
+        $age = $patient->profile?->ageYears();
+        $override = false;
+
+        if (! empty($data['assessment_version_id'])) {
+            $version = AssessmentVersion::query()->published()->find($data['assessment_version_id'])
+                ?? throw new ApiException('Assessment version is not available.', 'assessment_unavailable', 422);
+            if (! $version->coversAge($age)) {
+                if (! ($data['allow_age_override'] ?? false)) {
+                    throw new ApiException(
+                        $age === null ? 'The patient has no birth date; this version is age-restricted.' : 'This version is not meant for the patient\'s age.',
+                        $age === null ? 'age_required' : 'age_out_of_range',
+                        422,
+                        ['age_years' => $age, 'min_age_years' => $version->min_age_years, 'max_age_years' => $version->max_age_years],
+                    );
+                }
+                $override = true;
+            }
+        } else {
+            $version = AssessmentVersion::query()->published()
+                ->where('assessment_type_id', $data['assessment_type_id'])
+                ->forAge($age)
+                ->orderByDesc('published_at')
+                ->first();
+            if (! $version) {
+                $published = AssessmentVersion::query()->published()->where('assessment_type_id', $data['assessment_type_id'])->exists();
+                throw match (true) {
+                    ! $published => new ApiException('Assessment is not available.', 'assessment_unavailable', 422),
+                    $age === null => new ApiException('Enter the patient\'s birth date so the age-appropriate version can be chosen.', 'age_required', 422),
+                    default => new ApiException('No version of this assessment is meant for the patient\'s age.', 'no_version_for_age', 422, ['age_years' => $age]),
+                };
+            }
+        }
         $quota->ensureCanCreateSession($context->tenant());
 
         $session = TestSession::create([
@@ -60,7 +99,11 @@ class TestSessionController extends Controller
             'created_by' => $request->user()->id,
             'notes' => $data['notes'] ?? null,
         ]);
-        $audit->log('session.created', $session);
+        $audit->log('session.created', $session, array_filter([
+            'assessment_version' => $version->version,
+            'age_years' => $age,
+            'age_override' => $override ?: null,
+        ], fn ($v) => $v !== null));
 
         return new TestSessionResource($session->load(['patient', 'assessmentVersion.type']));
     }
@@ -104,10 +147,11 @@ class TestSessionController extends Controller
         return response()->json(['message' => 'Scoring queued.'], 202);
     }
 
-    public function results(TestSession $session): JsonResponse
+    public function results(TestSession $session, NormScorer $norms): JsonResponse
     {
         $run = $session->latestSucceededRun()->with(['metrics', 'validity'])->first()
             ?? throw new ApiException('No results yet.', 'not_scored', 404);
+        $comparison = $norms->score($session, $run->metrics);
 
         return response()->json([
             'session_id' => $session->id,
@@ -122,6 +166,13 @@ class TestSessionController extends Controller
                 'scope' => $m->scope,
             ])->values(),
             'scored_at' => $run->finished_at->toIso8601String(),
+            // Live comparison with the currently published norms (reports freeze theirs).
+            'norms' => $comparison ? [
+                ...$comparison['set'],
+                'age_years' => $comparison['age_years'],
+                'sex' => $comparison['sex'],
+                'scores' => array_values($comparison['scores']),
+            ] : null,
         ]);
     }
 }
