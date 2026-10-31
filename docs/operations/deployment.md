@@ -85,6 +85,9 @@ cd /opt/cognitest && docker compose --env-file .env.production exec api php arti
 با هر push، GitHub Actions (`.github/workflows/images.yml`) چهار image سرور را می‌سازد و در
 `ghcr.io/ferya3/iva2` منتشر می‌کند. نصب‌کننده image همان نسخه کد را دانلود می‌کند (یکی‌دو دقیقه) و فقط اگر
 در دسترس نباشد روی خود سرور build می‌کند. اگر GitHub هنوز در حال ساخت باشد، تا ۲۰ دقیقه صبر می‌کند.
+image با شناسهٔ آخرین commitی برچسب می‌خورد که ورودی‌های image را تغییر داده
+(`infrastructure/docker/image-inputs.txt`)؛ به‌روزرسانی‌هایی که فقط مستندات یا اسکریپت نصب را عوض می‌کنند
+image جدیدی لازم ندارند و چند ثانیه طول می‌کشند.
 
 - اجبار به build روی سرور: `--build-locally`
 - اگر پیام «not public» دیدید: در GitHub ← Packages ← `iva2` ← Package settings ← Change visibility ← Public (یک‌بار).

@@ -340,7 +340,10 @@ IMAGE_VERSION="$(sed -n 's/^VERSION=//p' "$ENV_FILE")"; IMAGE_VERSION="${IMAGE_V
 images_state() { # prints ready | missing | denied for the given commit
   local sha="$1" c out
   for c in "${COMPONENTS[@]}"; do
-    if ! out="$(docker manifest inspect "$IMAGE_REPO:$c-$sha" 2>&1)"; then
+    # Older docker CLIs fetch OCI manifests fine but then refuse to print them
+    # ("unsupported manifest format"): the image exists either way.
+    if ! out="$(docker manifest inspect "$IMAGE_REPO:$c-$sha" 2>&1)" \
+       && ! grep -qi 'unsupported manifest format' <<<"$out"; then
       if grep -qiE 'unauthorized|denied|forbidden' <<<"$out"; then echo denied; else echo missing; fi
       return 0
     fi
@@ -348,13 +351,17 @@ images_state() { # prints ready | missing | denied for the given commit
   echo ready
 }
 use_prebuilt() {
-  local sha state waited=0 c
-  sha="$(git -C "$INSTALL_DIR" rev-parse HEAD 2>/dev/null)" || return 1
-  if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
+  local sha state waited=0 c inputs
+  # Images are tagged with the last commit that changed what goes into them,
+  # so updates that touch only docs or this script reuse the existing images.
+  mapfile -t inputs < "$INSTALL_DIR/infrastructure/docker/image-inputs.txt" 2>/dev/null || return 1
+  sha="$(git -C "$INSTALL_DIR" log -1 --format=%H -- "${inputs[@]}" 2>/dev/null)"
+  [[ -n "$sha" ]] || return 1
+  if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=no -- "${inputs[@]}" 2>/dev/null)" ]]; then
     warn "The code in $INSTALL_DIR has local changes; building images on this server instead."
     return 1
   fi
-  log "Looking for prebuilt images of $(git -C "$INSTALL_DIR" log -1 --format='%h %s' | cut -c1-70)"
+  log "Looking for prebuilt images of $(git -C "$INSTALL_DIR" log -1 --format='%h %s' "$sha" | cut -c1-70)"
   while :; do
     state="$(images_state "$sha")"
     case "$state" in
@@ -372,10 +379,18 @@ use_prebuilt() {
     sleep 30; waited=$((waited + 30))
     if (( waited % 60 == 0 )); then log "  … still waiting for GitHub ($((waited / 60)) min)"; fi
   done
+  local attempt
   for c in "${COMPONENTS[@]}"; do
     log "Downloading $c image"
-    docker pull -q "$IMAGE_REPO:$c-$sha" >/dev/null
-    docker tag "$IMAGE_REPO:$c-$sha" "cognitest/$c:$IMAGE_VERSION"
+    for attempt in 1 2 3; do
+      docker pull -q "$IMAGE_REPO:$c-$sha" >/dev/null && break
+      if (( attempt == 3 )); then
+        warn "Could not download $IMAGE_REPO:$c-$sha; building on this server instead."
+        return 1
+      fi
+      sleep 5
+    done
+    docker tag "$IMAGE_REPO:$c-$sha" "cognitest/$c:$IMAGE_VERSION" || return 1
   done
   return 0
 }
