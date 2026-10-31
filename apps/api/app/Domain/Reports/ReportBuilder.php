@@ -15,6 +15,9 @@ final class ReportBuilder
 {
     public const SCHEMA_VERSION = '1.0';
 
+    /** Reports are Persian whatever the server's APP_LOCALE is. */
+    public const LOCALE = 'fa';
+
     private const OVERVIEW = ['trials', 'hit_rate', 'omissions', 'commissions', 'rt_mean', 'rt_median', 'rt_sd', 'rt_cv', 'd_prime', 'criterion_c', 'anticipatory_responses'];
 
     private const MODALITY = ['hit_rate', 'commission_rate', 'rt_mean', 'rt_sd', 'd_prime'];
@@ -32,23 +35,23 @@ final class ReportBuilder
             ->filter()
             ->map(fn ($m) => [
                 'key' => $m->metric_key,
-                'label' => __("metrics.{$m->metric_key}"),
+                'label' => __("metrics.{$m->metric_key}", [], self::LOCALE),
                 'value' => $m->value,
                 'unit' => $m->unit,
                 'scope' => $m->scope,
             ])->values()->all();
 
         $sections = [
-            ['key' => 'overview', 'title' => __('metrics.sections.overview'), 'metrics' => $pick('overall', self::OVERVIEW)],
-            ['key' => 'visual', 'title' => __('metrics.sections.visual'), 'metrics' => $pick('visual', self::MODALITY)],
-            ['key' => 'auditory', 'title' => __('metrics.sections.auditory'), 'metrics' => $pick('auditory', self::MODALITY)],
-            ['key' => 'trend', 'title' => __('metrics.sections.trend'), 'metrics' => $pick('overall', ['rt_mean_slope_per_block', 'hit_rate_slope_per_block'])],
+            ['key' => 'overview', 'title' => __('metrics.sections.overview', [], self::LOCALE), 'metrics' => $pick('overall', self::OVERVIEW)],
+            ['key' => 'visual', 'title' => __('metrics.sections.visual', [], self::LOCALE), 'metrics' => $pick('visual', self::MODALITY)],
+            ['key' => 'auditory', 'title' => __('metrics.sections.auditory', [], self::LOCALE), 'metrics' => $pick('auditory', self::MODALITY)],
+            ['key' => 'trend', 'title' => __('metrics.sections.trend', [], self::LOCALE), 'metrics' => $pick('overall', ['rt_mean_slope_per_block', 'hit_rate_slope_per_block'])],
         ];
         $sections = array_values(array_filter($sections, fn ($s) => $s['metrics'] !== []));
 
-        $disclaimers = __('metrics.disclaimers');
+        $disclaimers = __('metrics.disclaimers', [], self::LOCALE);
         if (! $assessment->is_clinical) {
-            array_unshift($disclaimers, __('metrics.non_clinical'));
+            array_unshift($disclaimers, __('metrics.non_clinical', [], self::LOCALE));
         }
 
         $calibration = $session->latestCalibration;
@@ -58,7 +61,7 @@ final class ReportBuilder
             'report_id' => (string) Str::uuid(),
             'report_version' => $version,
             'generated_at' => now()->toIso8601String(),
-            'locale' => 'fa',
+            'locale' => self::LOCALE,
             'tenant' => ['name' => $session->tenant->name],
             'patient' => [
                 'code' => $session->patient->patient_code,

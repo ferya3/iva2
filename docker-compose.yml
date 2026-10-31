@@ -8,6 +8,8 @@ name: cognitest
 x-api-env: &api-env
   APP_ENV: production
   APP_DEBUG: 'false'
+  APP_LOCALE: fa
+  APP_FALLBACK_LOCALE: fa
   APP_KEY: ${APP_KEY:?APP_KEY is required}
   # Public URLs; scripts/install.sh sets them for domain or IP mode.
   APP_URL: ${PUBLIC_API_URL:-https://api.cognitest.ir}

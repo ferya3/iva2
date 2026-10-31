@@ -39,7 +39,7 @@
 </header>
 
 @unless($doc['session']['is_clinical'])
-  <div class="warning">{{ __('metrics.non_clinical') }}</div>
+  <div class="warning">{{ __('metrics.non_clinical', [], $doc['locale'] ?? 'fa') }}</div>
 @endunless
 
 <section class="grid">

@@ -123,8 +123,12 @@ class SessionFlowTest extends TestCase
         $this->assertStringStartsWith('%PDF', $download->streamedContent());
         $this->assertDatabaseHas('report_access_logs', ['report_id' => $reportId, 'action' => 'download']);
 
-        // A second report is a new immutable version.
-        $this->postJson("/api/v1/sessions/{$session}/reports")->assertCreated()->assertJsonPath('data.report_version', 2);
+        // A second report is a new immutable version. Reports stay Persian
+        // even when the server runs with another APP_LOCALE (Docker has no .env).
+        app()->setLocale('en');
+        $second = $this->postJson("/api/v1/sessions/{$session}/reports")->assertCreated()->assertJsonPath('data.report_version', 2);
+        $this->assertSame('شاخص‌های کلی', $second->json('data.content.sections.0.title'));
+        $this->assertSame(__('metrics.disclaimers', [], 'fa'), array_slice($second->json('data.content.disclaimers'), -count(__('metrics.disclaimers', [], 'fa'))));
         $this->getJson("/api/v1/sessions/{$session}/report")->assertJsonPath('data.report_version', 2);
     }
 
