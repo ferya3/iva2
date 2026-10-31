@@ -30,6 +30,8 @@ SELF_SIGNED=0
 DEMO=0
 SKIP_DOCKER=0
 NO_BUILD=0
+BUILD_LOCALLY=0
+IMAGE_REPO="ghcr.io/ferya3/iva2"
 NO_UPDATE=0
 
 usage() {
@@ -52,6 +54,8 @@ Usage: install.sh (--domain DOMAIN | --ip [ADDRESS]) [options]
   --repo URL --branch NAME Source repository (private repo: https://<token>@github.com/…)
   --skip-docker-install    Docker Engine + Compose v2 are already installed
   --no-build               Use images already present locally (cognitest/*:VERSION)
+  --build-locally          Build images on this server instead of downloading prebuilt ones
+  --image-repo REPO        Registry repository with prebuilt images (default ghcr.io/ferya3/iva2)
   --no-update              Do not pull the latest code before installing
 USAGE
 }
@@ -75,6 +79,8 @@ while [[ $# -gt 0 ]]; do
     --branch) BRANCH="$2"; shift 2 ;;
     --skip-docker-install) SKIP_DOCKER=1; shift ;;
     --no-build) NO_BUILD=1; shift ;;
+    --build-locally) BUILD_LOCALLY=1; shift ;;
+    --image-repo) IMAGE_REPO="$2"; shift 2 ;;
     --no-update) NO_UPDATE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
@@ -327,20 +333,81 @@ if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
 fi
 
 # ------------------------------------------------------------ build & start --
-if [[ $NO_BUILD -eq 0 ]]; then
+# Prebuilt images (GitHub Actions → ghcr.io, .github/workflows/images.yml):
+# downloading takes a minute or two instead of compiling on the server.
+COMPONENTS=(api worker clinic-web admin-web)
+IMAGE_VERSION="$(sed -n 's/^VERSION=//p' "$ENV_FILE")"; IMAGE_VERSION="${IMAGE_VERSION:-latest}"
+images_state() { # prints ready | missing | denied for the given commit
+  local sha="$1" c out
+  for c in "${COMPONENTS[@]}"; do
+    if ! out="$(docker manifest inspect "$IMAGE_REPO:$c-$sha" 2>&1)"; then
+      if grep -qiE 'unauthorized|denied|forbidden' <<<"$out"; then echo denied; else echo missing; fi
+      return 0
+    fi
+  done
+  echo ready
+}
+use_prebuilt() {
+  local sha state waited=0 c
+  sha="$(git -C "$INSTALL_DIR" rev-parse HEAD 2>/dev/null)" || return 1
+  if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
+    warn "The code in $INSTALL_DIR has local changes; building images on this server instead."
+    return 1
+  fi
+  log "Looking for prebuilt images of $(git -C "$INSTALL_DIR" log -1 --format='%h %s' | cut -c1-70)"
+  while :; do
+    state="$(images_state "$sha")"
+    case "$state" in
+      ready) break ;;
+      denied)
+        warn "Prebuilt images in $IMAGE_REPO are not public. Make the package public once on GitHub"
+        warn "(Package settings → Change visibility → Public), or keep building locally."
+        return 1 ;;
+    esac
+    if (( waited >= 1200 )); then
+      warn "Prebuilt images for this version are still not available; building on this server instead."
+      return 1
+    fi
+    if (( waited == 0 )); then log "GitHub is still building the images for this version — waiting (up to 20 minutes)"; fi
+    sleep 30; waited=$((waited + 30))
+    if (( waited % 60 == 0 )); then log "  … still waiting for GitHub ($((waited / 60)) min)"; fi
+  done
+  for c in "${COMPONENTS[@]}"; do
+    log "Downloading $c image"
+    docker pull -q "$IMAGE_REPO:$c-$sha" >/dev/null
+    docker tag "$IMAGE_REPO:$c-$sha" "cognitest/$c:$IMAGE_VERSION"
+  done
+  return 0
+}
+
+STEP="getting images"
+if [[ $NO_BUILD -eq 1 ]]; then
+  log "Using images already on this server (--no-build)"
+elif [[ $BUILD_LOCALLY -eq 0 ]] && use_prebuilt; then
+  docker image prune -f >/dev/null 2>&1 || true
+else
   BUILD_LOGS=/var/log/cognitest
   mkdir -p "$BUILD_LOGS"
-  # One image at a time (readable output), retried: network failures are
-  # usually transient and BuildKit's cache keeps every finished step.
+  # One image group at a time, retried: network failures are usually
+  # transient and BuildKit's cache keeps every finished step. Prints each
+  # new build step, and a heartbeat while a long step (e.g. next build) runs.
   build_image() { # label service…
     local label="$1"; shift
-    local log="$BUILD_LOGS/build-$1.log" attempt
+    local log="$BUILD_LOGS/build-$1.log" attempt pid start cur last shown
     for attempt in 1 2 3; do
       log "Building $label (attempt $attempt/3) — full log: $log"
-      if dc --progress=plain build "$@" 2>&1 | tee "$log" \
-          | { grep --line-buffered -E '^#[0-9]+ \[[^]]+ [0-9]+/[0-9]+\]' | grep --line-buffered -v CACHED | cut -c1-110 || true; }; then
-        return 0
-      fi
+      dc --progress=plain build "$@" >"$log" 2>&1 &
+      pid=$!; start=$SECONDS; last=""; shown=$SECONDS
+      while kill -0 "$pid" 2>/dev/null; do
+        sleep 5
+        cur="$(grep -E '^#[0-9]+ \[[^]]+ [0-9]+/[0-9]+\]' "$log" 2>/dev/null | grep -v CACHED | tail -1 | cut -c1-100 || true)"
+        if [[ -n "$cur" && "$cur" != "$last" ]]; then
+          echo "    $cur"; last="$cur"; shown=$SECONDS
+        elif (( SECONDS - shown >= 30 )); then
+          echo "    … still working ($(( (SECONDS - start) / 60 ))m $(( (SECONDS - start) % 60 ))s)"; shown=$SECONDS
+        fi
+      done
+      if wait "$pid"; then return 0; fi
       warn "Building $label failed. Error lines:"
       grep -E 'ERROR|E: |Err:|ERR_|error ' "$log" | grep -v '^#[0-9]* \[' | tail -12 >&2 || true
       sleep 10

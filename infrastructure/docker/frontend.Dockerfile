@@ -18,7 +18,11 @@ WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch --frozen-lockfile
 COPY tsconfig.base.json turbo.json ./
-COPY packages/ packages/
+# Only the workspace packages the panels depend on: engine/scoring changes
+# do not invalidate the panel builds.
+COPY packages/shared-types/ packages/shared-types/
+COPY packages/report-schema/ packages/report-schema/
+COPY packages/ui/ packages/ui/
 COPY apps/${APP}/ apps/${APP}/
 RUN pnpm install --offline --frozen-lockfile --filter "@cognitest/${APP}..." \
  && pnpm --filter "@cognitest/${APP}" build

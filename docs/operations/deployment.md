@@ -80,6 +80,15 @@ sudo git clone -b claude/kind-maxwell-ibgtgr https://github.com/ferya3/iva2.git 
 cd /opt/cognitest && docker compose --env-file .env.production exec api php artisan cognitest:reset-password user@example.ir
 ```
 
+## imageهای آماده
+
+با هر push، GitHub Actions (`.github/workflows/images.yml`) چهار image سرور را می‌سازد و در
+`ghcr.io/ferya3/iva2` منتشر می‌کند. نصب‌کننده image همان نسخه کد را دانلود می‌کند (یکی‌دو دقیقه) و فقط اگر
+در دسترس نباشد روی خود سرور build می‌کند. اگر GitHub هنوز در حال ساخت باشد، تا ۲۰ دقیقه صبر می‌کند.
+
+- اجبار به build روی سرور: `--build-locally`
+- اگر پیام «not public» دیدید: در GitHub ← Packages ← `iva2` ← Package settings ← Change visibility ← Public (یک‌بار).
+
 ## عیب‌یابی نصب
 
 - هر image جداگانه ساخته می‌شود و خطای شبکه تا ۳ بار خودکار تکرار می‌شود؛ لاگ کامل: `/var/log/cognitest/build-*.log`.
