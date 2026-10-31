@@ -6,6 +6,7 @@ import {
   BookOpenCheck,
   Building2,
   CreditCard,
+  KeyRound,
   LayoutDashboard,
   ScrollText,
   UserCog,
@@ -19,6 +20,7 @@ const NAV = [
   { href: '/assessments', label: 'کاتالوگ آزمون‌ها', icon: BookOpenCheck },
   { href: '/users', label: 'کاربران', icon: UserCog },
   { href: '/audit', label: 'گزارش رویدادها', icon: ScrollText },
+  { href: '/account', label: 'حساب کاربری', icon: KeyRound },
 ];
 
 export function Nav() {

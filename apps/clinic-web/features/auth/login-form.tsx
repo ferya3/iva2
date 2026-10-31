@@ -15,7 +15,15 @@ export function LoginForm({ next, expired }: { next?: string; expired?: boolean 
       {!state.ok && state.message ? <Alert tone="danger">{state.message}</Alert> : null}
       <input type="hidden" name="next" value={next ?? '/'} />
       <Field label="ایمیل" htmlFor="email">
-        <Input id="email" name="email" type="email" autoComplete="username" dir="ltr" required />
+        <Input
+          id="email"
+          name="email"
+          defaultValue={state.values?.email}
+          type="email"
+          autoComplete="username"
+          dir="ltr"
+          required
+        />
       </Field>
       <Field label="رمز عبور" htmlFor="password">
         <Input

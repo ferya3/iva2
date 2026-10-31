@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Tenancy\TenantRole;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,11 @@ class Tenant extends Model
     public function members(): HasMany
     {
         return $this->hasMany(TenantUser::class);
+    }
+
+    public function ownerMembership(): HasOne
+    {
+        return $this->hasOne(TenantUser::class)->where('role', TenantRole::Owner->value);
     }
 
     public function settings(): HasOne

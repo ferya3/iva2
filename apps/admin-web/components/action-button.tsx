@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Alert, type ButtonProps } from '@cognitest/ui';
+import { Alert, CredentialsDialog, type ButtonProps } from '@cognitest/ui';
 import type { FormState } from '@/lib/api';
 import { SubmitButton } from './submit-button';
 
@@ -10,10 +10,13 @@ export function ActionButton({
   action,
   children,
   confirm,
+  credentialsTitle,
   ...props
 }: ButtonProps & {
   action: (state: FormState, form: FormData) => Promise<FormState>;
   confirm?: string;
+  /** Title of the dialog that shows sign-in details returned by the action. */
+  credentialsTitle?: string;
   pendingText?: string;
 }) {
   const [state, formAction] = useActionState(action, { ok: true });
@@ -27,6 +30,13 @@ export function ActionButton({
     >
       <SubmitButton {...props}>{children}</SubmitButton>
       {state.message ? <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert> : null}
+      {state.credentials ? (
+        <CredentialsDialog
+          key={state.credentials.password}
+          credentials={state.credentials}
+          title={credentialsTitle}
+        />
+      ) : null}
     </form>
   );
 }

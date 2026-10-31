@@ -6,6 +6,7 @@ import {
   ClipboardList,
   CreditCard,
   FileBarChart,
+  KeyRound,
   LayoutDashboard,
   PlusCircle,
   Settings,
@@ -23,6 +24,7 @@ const NAV = [
   { href: '/team', label: 'متخصصان', icon: Stethoscope, permission: 'members.manage' },
   { href: '/billing', label: 'اشتراک و پرداخت', icon: CreditCard },
   { href: '/settings', label: 'تنظیمات کلینیک', icon: Settings },
+  { href: '/account', label: 'حساب کاربری', icon: KeyRound },
 ] as const;
 
 export function Sidebar({ permissions }: { permissions: string[] }) {

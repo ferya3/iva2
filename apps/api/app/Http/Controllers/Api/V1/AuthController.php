@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -71,6 +73,24 @@ class AuthController extends Controller
             'token' => $token->plainTextToken,
             'expires_at' => $token->accessToken->expires_at?->toIso8601String(),
         ]);
+    }
+
+    /** Changes the signed-in user's password; other sessions are signed out. */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed', 'different:current_password'],
+        ]);
+        $user = $request->user();
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages(['current_password' => 'The current password is incorrect.']);
+        }
+        $user->forceFill(['password' => $data['password']])->save();
+        $current = $user->currentAccessToken();
+        $user->tokens()->when($current instanceof PersonalAccessToken, fn ($q) => $q->whereKeyNot($current->getKey()))->delete();
+
+        return response()->json(['message' => 'Password changed.']);
     }
 
     public function logout(Request $request): JsonResponse

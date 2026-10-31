@@ -21,6 +21,10 @@ class TenantResource extends JsonResource
             'license_number' => $this->license_number,
             'created_at' => $this->created_at?->toIso8601String(),
             'members_count' => $this->whenCounted('members'),
+            'owner' => $this->whenLoaded('ownerMembership', fn () => $this->ownerMembership?->user ? [
+                'name' => $this->ownerMembership->user->name,
+                'email' => $this->ownerMembership->user->email,
+            ] : null),
         ];
     }
 }

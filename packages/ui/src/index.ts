@@ -6,3 +6,4 @@ export * from './components/form';
 export * from './components/badge';
 export * from './components/table';
 export * from './components/feedback';
+export * from './components/credentials';

@@ -11,7 +11,15 @@ export function LoginForm() {
     <form action={action} className="space-y-4">
       {!state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
       <Field label="ایمیل" htmlFor="email">
-        <Input id="email" name="email" type="email" dir="ltr" autoComplete="username" required />
+        <Input
+          id="email"
+          name="email"
+          defaultValue={state.values?.email}
+          type="email"
+          dir="ltr"
+          autoComplete="username"
+          required
+        />
       </Field>
       <Field label="رمز عبور" htmlFor="password">
         <Input

@@ -92,6 +92,44 @@ class AdminTest extends TestCase
         $this->patchJson("/api/v1/admin/tenants/{$id}", ['status' => 'suspended'])->assertOk()->assertJsonPath('data.status', 'suspended');
     }
 
+    public function test_new_clinic_returns_the_owner_sign_in_details(): void
+    {
+        config(['cognitest.clinic_web_url' => 'https://82.115.25.8']);
+        Sanctum::actingAs(User::factory()->platformAdmin()->create());
+        $res = $this->postJson('/api/v1/admin/tenants', ['name' => 'Clinic Shiraz', 'owner_email' => 'Owner@Shiraz.ir', 'owner_name' => 'Dr Owner'])
+            ->assertCreated()
+            ->assertJsonPath('data.owner.email', 'owner@shiraz.ir')
+            ->assertJsonPath('credentials.email', 'owner@shiraz.ir')
+            ->assertJsonPath('credentials.name', 'Dr Owner')
+            ->assertJsonPath('credentials.login_url', 'https://82.115.25.8/login');
+        $this->assertSame($res->json('owner_temporary_password'), $res->json('credentials.password'));
+
+        $this->getJson('/api/v1/admin/tenants')->assertJsonPath('data.0.owner.email', 'owner@shiraz.ir');
+    }
+
+    public function test_admins_issue_a_new_owner_password(): void
+    {
+        Sanctum::actingAs(User::factory()->platformAdmin()->create());
+        $id = $this->postJson('/api/v1/admin/tenants', ['name' => 'Clinic Rasht', 'owner_email' => 'owner@rasht.ir', 'owner_name' => 'Owner'])->json('data.id');
+        $owner = User::query()->where('email', 'owner@rasht.ir')->first();
+        $owner->createToken('old');
+
+        $password = $this->postJson("/api/v1/admin/tenants/{$id}/owner/reset-password")
+            ->assertOk()->assertJsonPath('credentials.email', 'owner@rasht.ir')->json('credentials.password');
+
+        $this->assertSame(0, $owner->tokens()->count());
+        $this->postJson('/api/v1/auth/login', ['email' => 'owner@rasht.ir', 'password' => $password])->assertOk();
+        $this->assertDatabaseHas('audit_logs', ['action' => 'admin.tenant.owner_password_reset', 'subject_id' => $owner->id]);
+    }
+
+    public function test_owner_password_reset_does_not_touch_platform_admins(): void
+    {
+        $admin = User::factory()->platformAdmin()->create(['email' => 'root@cognitest.ir']);
+        Sanctum::actingAs($admin);
+        $id = $this->postJson('/api/v1/admin/tenants', ['name' => 'Own clinic', 'owner_email' => 'root@cognitest.ir', 'owner_name' => 'Root'])->json('data.id');
+        $this->postJson("/api/v1/admin/tenants/{$id}/owner/reset-password")->assertStatus(409)->assertJsonPath('code', 'platform_admin_protected');
+    }
+
     public function test_versions_are_immutable_after_publishing(): void
     {
         Sanctum::actingAs(User::factory()->platformAdmin()->create());

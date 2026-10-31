@@ -1,26 +1,45 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { api, toFormError, type FormState } from '@/lib/api';
+import {
+  api,
+  formValues,
+  toCredentials,
+  toFormError,
+  type ApiCredentials,
+  type FormState,
+} from '@/lib/api';
 
 export async function addMember(_: FormState, form: FormData): Promise<FormState> {
-  let password: string | null = null;
+  let credentials: ApiCredentials | null = null;
   try {
-    const res = await api<{ temporary_password: string | null }>('/tenant/members', {
+    const res = await api<{ credentials: ApiCredentials | null }>('/tenant/members', {
       method: 'POST',
       body: { email: form.get('email'), name: form.get('name') || null, role: form.get('role') },
     });
-    password = res.temporary_password;
+    credentials = res.credentials;
+  } catch (e) {
+    return { ...toFormError(e), values: formValues(form) };
+  }
+  revalidatePath('/team');
+  return credentials
+    ? { ok: true, message: 'عضو جدید اضافه شد.', credentials: toCredentials(credentials) }
+    : {
+        ok: true,
+        message: `عضو اضافه شد. ${String(form.get('email'))} از قبل حساب داشت و با همان رمز قبلی خود وارد می‌شود.`,
+      };
+}
+
+/** New temporary password for a member who lost theirs. */
+export async function resetMemberPassword(id: number, _: FormState): Promise<FormState> {
+  try {
+    const res = await api<{ credentials: ApiCredentials }>(`/tenant/members/${id}/reset-password`, {
+      method: 'POST',
+    });
+    return { ok: true, credentials: toCredentials(res.credentials) };
   } catch (e) {
     return toFormError(e);
   }
-  revalidatePath('/team');
-  return {
-    ok: true,
-    message: password
-      ? `عضو جدید اضافه شد. رمز موقت: ${password} — آن را به فرد بدهید (فقط همین یک‌بار نمایش داده می‌شود).`
-      : 'عضو اضافه شد؛ با حساب و رمز فعلی خود وارد می‌شود.',
-  };
 }
 
 export async function setMemberStatus(

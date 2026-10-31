@@ -1,4 +1,5 @@
 import 'server-only';
+import type { AccountCredentials } from '@cognitest/ui';
 import { cookies, headers as requestHeaders } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ApiError } from '@cognitest/shared-types';
@@ -92,6 +93,36 @@ export interface FormState {
   ok: boolean;
   message?: string;
   errors?: Record<string, string[]>;
+  /** Submitted values, so a form that failed keeps what the user typed. */
+  values?: Record<string, string>;
+  /** One-time sign-in details of an account that was just created or reset. */
+  credentials?: AccountCredentials;
+}
+
+/** Text fields of a submitted form (never passwords), to refill it after an error. */
+export function formValues(form: FormData): Record<string, string> {
+  const values: Record<string, string> = {};
+  form.forEach((value, key) => {
+    if (typeof value === 'string' && !key.startsWith('$') && !key.includes('password'))
+      values[key] = value;
+  });
+  return values;
+}
+
+/** Sign-in details as the API returns them (`credentials`). */
+export interface ApiCredentials {
+  name: string | null;
+  email: string;
+  password: string;
+  login_url: string;
+}
+
+export function toCredentials(
+  c: ApiCredentials | null | undefined,
+): AccountCredentials | undefined {
+  return c
+    ? { name: c.name, email: c.email, password: c.password, loginUrl: c.login_url }
+    : undefined;
 }
 
 const MESSAGES: Record<string, string> = {

@@ -1,12 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { api, toFormError, type FormState } from '@/lib/api';
+import {
+  api,
+  formValues,
+  toCredentials,
+  toFormError,
+  type ApiCredentials,
+  type FormState,
+} from '@/lib/api';
 
 export async function createTenant(_: FormState, form: FormData): Promise<FormState> {
-  let password: string | null = null;
+  let credentials: ApiCredentials | null = null;
   try {
-    const res = await api<{ owner_temporary_password: string | null }>('/admin/tenants', {
+    const res = await api<{ credentials: ApiCredentials | null }>('/admin/tenants', {
       method: 'POST',
       body: {
         name: form.get('name'),
@@ -16,17 +23,32 @@ export async function createTenant(_: FormState, form: FormData): Promise<FormSt
         plan: form.get('plan'),
       },
     });
-    password = res.owner_temporary_password;
+    credentials = res.credentials;
+  } catch (e) {
+    return { ...toFormError(e), values: formValues(form) };
+  }
+  revalidatePath('/tenants');
+  return credentials
+    ? { ok: true, message: 'کلینیک ایجاد شد.', credentials: toCredentials(credentials) }
+    : {
+        ok: true,
+        message: `کلینیک ایجاد شد. ${String(form.get('owner_email'))} از قبل حساب داشت و با همان رمز قبلی خود وارد می‌شود.`,
+      };
+}
+
+/** New temporary password for the clinic owner (e.g. the first one was lost). */
+export async function resetOwnerPassword(id: string, _: FormState): Promise<FormState> {
+  try {
+    const res = await api<{ credentials: ApiCredentials }>(
+      `/admin/tenants/${id}/owner/reset-password`,
+      {
+        method: 'POST',
+      },
+    );
+    return { ok: true, credentials: toCredentials(res.credentials) };
   } catch (e) {
     return toFormError(e);
   }
-  revalidatePath('/tenants');
-  return {
-    ok: true,
-    message: password
-      ? `کلینیک ایجاد شد. ورود مالک: ${String(form.get('owner_email'))} — رمز موقت: ${password} (فقط همین یک‌بار نمایش داده می‌شود)`
-      : 'کلینیک ایجاد شد. مالک با حساب و رمز فعلی خود وارد می‌شود.',
-  };
 }
 
 export async function setTenantStatus(

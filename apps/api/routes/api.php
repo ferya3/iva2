@@ -35,6 +35,7 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/refresh', [AuthController::class, 'refresh']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
+        Route::post('auth/password', [AuthController::class, 'changePassword'])->middleware('throttle:auth');
 
         // Clinics the user belongs to / self-service creation.
         Route::get('tenants', [TenantController::class, 'index']);
@@ -51,6 +52,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('tenant/members', [TenantMemberController::class, 'store']);
                 Route::patch('tenant/members/{member}', [TenantMemberController::class, 'update'])->whereNumber('member');
                 Route::delete('tenant/members/{member}', [TenantMemberController::class, 'destroy'])->whereNumber('member');
+                Route::post('tenant/members/{member}/reset-password', [TenantMemberController::class, 'resetPassword'])->whereNumber('member')->middleware('throttle:10,1');
             });
 
             Route::get('patients', [PatientController::class, 'index'])->middleware('permission:patients.view');
@@ -85,6 +87,7 @@ Route::prefix('v1')->group(function () {
             Route::get('tenants', [AdminTenantController::class, 'index']);
             Route::post('tenants', [AdminTenantController::class, 'store']);
             Route::patch('tenants/{tenant}', [AdminTenantController::class, 'update']);
+            Route::post('tenants/{tenant}/owner/reset-password', [AdminTenantController::class, 'resetOwnerPassword']);
             Route::get('plans', [AdminPlanController::class, 'index']);
             Route::post('plans', [AdminPlanController::class, 'store']);
             Route::patch('plans/{plan}', [AdminPlanController::class, 'update']);

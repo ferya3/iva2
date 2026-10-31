@@ -38,6 +38,7 @@ export async function login(_: FormState, form: FormData): Promise<FormState> {
         body.code === 'too_many_attempts'
           ? 'تعداد تلاش‌ها زیاد است؛ چند دقیقه دیگر دوباره امتحان کنید.'
           : 'ایمیل یا رمز عبور اشتباه است.',
+      values: { email: String(form.get('email') ?? '') },
     };
   }
   const jar = await cookies();

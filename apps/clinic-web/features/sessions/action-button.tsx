@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Alert, type ButtonProps } from '@cognitest/ui';
+import { Alert, CredentialsDialog, type ButtonProps } from '@cognitest/ui';
 import type { FormState } from '@/lib/api';
 import { SubmitButton } from '@/components/submit-button';
 
@@ -27,6 +27,9 @@ export function ActionButton({
     >
       <SubmitButton {...props}>{children}</SubmitButton>
       {state.message ? <Alert tone={state.ok ? 'success' : 'danger'}>{state.message}</Alert> : null}
+      {state.credentials ? (
+        <CredentialsDialog key={state.credentials.password} credentials={state.credentials} />
+      ) : null}
     </form>
   );
 }

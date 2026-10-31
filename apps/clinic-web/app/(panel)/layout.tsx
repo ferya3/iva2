@@ -27,10 +27,14 @@ export default async function PanelLayout({ children }: { children: ReactNode })
           <Sidebar permissions={membership.permissions} />
         </div>
         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-          <div className="min-w-0">
+          <Link
+            href="/account"
+            className="min-w-0 hover:opacity-80"
+            title="حساب کاربری و تغییر رمز"
+          >
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="ltr truncate text-xs text-slate-500">{user.email}</p>
-          </div>
+          </Link>
           <form action={logout}>
             <Button type="submit" variant="ghost" size="icon" aria-label="خروج">
               <LogOut className="h-4 w-4" />

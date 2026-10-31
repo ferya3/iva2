@@ -22,14 +22,15 @@ export async function login(_: FormState, form: FormData): Promise<FormState> {
     cache: 'no-store',
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) return { ok: false, message: 'ایمیل یا رمز عبور اشتباه است.' };
+  const values = { email: String(form.get('email') ?? '') };
+  if (!res.ok) return { ok: false, message: 'ایمیل یا رمز عبور اشتباه است.', values };
   if (body.user?.platform_role !== 'super_admin') {
     // Do not keep a token that cannot use this panel.
     await fetch(`${API_URL}/auth/logout`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${body.token}`, Accept: 'application/json' },
     });
-    return { ok: false, message: 'این حساب دسترسی مدیریت سامانه ندارد.' };
+    return { ok: false, message: 'این حساب دسترسی مدیریت سامانه ندارد.', values };
   }
   const maxAge = Math.max(
     60,

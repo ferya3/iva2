@@ -15,7 +15,7 @@ import { api } from '@/lib/api';
 import { Pagination } from '@/components/pagination';
 import { ActionButton } from '@/components/action-button';
 import { TenantForm } from '@/features/tenants/tenant-form';
-import { setTenantStatus } from '@/features/tenants/actions';
+import { resetOwnerPassword, setTenantStatus } from '@/features/tenants/actions';
 
 export const metadata = { title: 'کلینیک‌ها' };
 
@@ -27,6 +27,7 @@ interface Tenant {
   city: string | null;
   members_count: number;
   created_at: string;
+  owner: { name: string; email: string } | null;
 }
 const STATUS = {
   active: { fa: 'فعال', tone: 'success' },
@@ -64,6 +65,7 @@ export default async function TenantsPage({ searchParams }: PageProps<'/tenants'
             <thead>
               <tr>
                 <Th>نام</Th>
+                <Th>مالک (نام کاربری)</Th>
                 <Th>شناسه</Th>
                 <Th>وضعیت</Th>
                 <Th>اعضا</Th>
@@ -79,6 +81,16 @@ export default async function TenantsPage({ searchParams }: PageProps<'/tenants'
                     <div className="text-xs text-slate-500">{t.city}</div>
                   </Td>
                   <Td>
+                    {t.owner ? (
+                      <>
+                        <span className="ltr block">{t.owner.email}</span>
+                        <span className="text-xs text-slate-500">{t.owner.name}</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </Td>
+                  <Td>
                     <span className="ltr">{t.slug}</span>
                   </Td>
                   <Td>
@@ -86,7 +98,19 @@ export default async function TenantsPage({ searchParams }: PageProps<'/tenants'
                   </Td>
                   <Td>{faNumber(t.members_count)}</Td>
                   <Td>{faDate(t.created_at)}</Td>
-                  <Td>
+                  <Td className="space-y-2">
+                    {t.owner ? (
+                      <ActionButton
+                        action={resetOwnerPassword.bind(null, t.id)}
+                        variant="secondary"
+                        size="sm"
+                        pendingText="در حال ساخت…"
+                        credentialsTitle="اطلاعات ورود مالک کلینیک"
+                        confirm={`رمز فعلی ${t.owner.email} باطل و یک رمز موقت جدید ساخته می‌شود. ادامه می‌دهید؟`}
+                      >
+                        رمز جدید مالک
+                      </ActionButton>
+                    ) : null}
                     <ActionButton
                       action={setTenantStatus.bind(
                         null,

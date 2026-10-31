@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import type { Member } from '@/lib/types';
 import { MemberForm } from '@/features/team/member-form';
 import { ActionButton } from '@/features/sessions/action-button';
-import { setMemberStatus } from '@/features/team/actions';
+import { resetMemberPassword, setMemberStatus } from '@/features/team/actions';
 
 export const metadata: Metadata = { title: 'متخصصان' };
 
@@ -55,7 +55,18 @@ export default async function TeamPage() {
                     )}
                   </Td>
                   <Td>{faDate(m.joined_at)}</Td>
-                  <Td>
+                  <Td className="space-y-2">
+                    {m.role !== 'owner' ? (
+                      <ActionButton
+                        action={resetMemberPassword.bind(null, m.id)}
+                        variant="secondary"
+                        size="sm"
+                        pendingText="در حال ساخت…"
+                        confirm={`رمز فعلی ${m.email} باطل و یک رمز موقت جدید ساخته می‌شود. ادامه می‌دهید؟`}
+                      >
+                        رمز جدید
+                      </ActionButton>
+                    ) : null}
                     {m.role !== 'owner' ? (
                       <ActionButton
                         action={setMemberStatus.bind(
